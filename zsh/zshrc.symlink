@@ -1,0 +1,73 @@
+PATH="$PATH:$HOME/.bin";
+
+
+########################################################
+# Aliases
+########################################################
+
+# reload zsh config
+alias reload!='RELOAD=1 source ~/.zshrc'
+
+# Detect which `ls` flavor is in use
+if ls --color > /dev/null 2>&1; then # GNU `ls`
+    colorflag="--color"
+else # macOS `ls`
+    colorflag="-G"
+fi
+
+# Filesystem aliases
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....="cd ../../.."
+alias .....="cd ../../../.."
+
+alias l="ls -lah ${colorflag}"
+alias la="ls -AF ${colorflag}"
+alias ll="ls -lFh ${colorflag}"
+alias lld="ls -l | grep ^d"
+alias rmf="rm -rf"
+
+# Helpers
+alias grep='grep --color=auto'
+alias df='df -h' # disk free, in Gigabytes, not bytes
+alias du='du -h -c' # calculate disk usage for a folder
+
+# Hide/show all desktop icons (useful when presenting)
+alias hidedesktop="defaults write com.apple.finder CreateDesktop -bool false && killall Finder"
+alias showdesktop="defaults write com.apple.finder CreateDesktop -bool true && killall Finder"
+
+# Recursively delete `.DS_Store` files
+alias cleanup="find . -name '*.DS_Store' -type f -ls -delete"
+# remove broken symlinks
+alias clsym="find -L . -name . -o -type d -prune -o -type l -exec rm {} +"
+
+alias lpath='echo $PATH | tr ":" "\n"' # list the PATH separated by new lines
+
+# coding - npm aliases
+alias ni="npm install"
+alias nt="npm test"
+alias nu="npm uninstall"
+alias nr="npm run"
+alias rmn="rm -rf node_modules"
+
+# coding - yarn aliases
+## yarn aliases
+alias yar="yarn run";
+alias yas="yarn run start";
+alias yab="yarn run build";
+alias yat="yarn run test";
+alias yav="yarn run validate";
+alias yoff="yarn add --offline";
+alias ypm="echo \"Installing deps without lockfile and ignoring engines\" && yarn install --no-lockfile --ignore-engines"
+
+alias code="\"/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code\""
+
+# ASDF
+. /usr/local/opt/asdf/libexec/asdf.sh
+
+# If a local zshrc exists, source it
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
+if [[ -a ~/.localrc ]]; then
+    source ~/.localrc
+fi

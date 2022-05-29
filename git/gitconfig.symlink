@@ -1,0 +1,41 @@
+[alias]
+  amend = commit -a --amend --no-edit
+  branches = branch -a
+  # current branch
+  cbr = rev-parse --abbrev-ref HEAD
+  co = checkout
+  cob = checkout -b
+  cont = rebase --continue
+	graph = log --oneline --graph --decorate
+  ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
+  lt = describe --tags --abbrev=0
+  pf = push --force-with-lease
+  recent-branches = !git branch --sort=-committerdate | head
+  remotes = remote -v
+  tags = tag -l
+  undo = reset --soft HEAD~1
+[branch]
+  # set up 'git pull' to rebase instead of merge
+  autosetuprebase = always
+[core]
+  excludesfile = ~/.gitignore_global
+[color "branch"]
+  current = green bold
+  local = green
+  remote = red bold
+[color "status"]
+  added = green bold
+  changed = yellow bold
+  untracked = red
+[init]
+	defaultBranch = main
+[include]
+  # A local gitconfig, outside of version control.
+  # If the file doesn't exist it is silently ignored
+  path = ~/.gitconfig-local
+[push]
+  default = current
+[pull]
+  rebase = true
+[rebase]
+  autoStash = true
