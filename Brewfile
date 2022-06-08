@@ -40,6 +40,7 @@ cask rectangle
 cask parallels
 cask photosweeper-xr
 cask anki
+cask karabiner-elements
 
 # investment
 cask tradingview
@@ -71,4 +72,5 @@ brew "wdiff" # word differences in text files
 brew "wget" # internet file retriever
 brew "z" # switch between most used directories
 brew "zsh" # zsh (latest)
-brew "asdf"
+brew "asdf" # asdf
+brew "yqrashawn/goku/goku" # goku for karabiner
