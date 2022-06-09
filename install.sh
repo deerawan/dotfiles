@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source lib.sh
+
 DOTFILES="$(pwd)"
 
 awesome_header
@@ -123,20 +125,11 @@ setup_macos() {
     running "Configuring macOS"
     if [[ "$(uname)" == "Darwin" ]]; then
 
-        echo "Finder: show all filename extensions"
-        defaults write NSGlobalDomain AppleShowAllExtensions -bool true
-
-        echo "show hidden files by default"
-        defaults write com.apple.Finder AppleShowAllFiles -bool false
-
         echo "only use UTF-8 in Terminal.app"
         defaults write com.apple.terminal StringEncodings -array 4
 
         echo "expand save dialog by default"
         defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
-
-        echo "show the ~/Library folder in Finder"
-        chflags nohidden ~/Library
 
         echo "Enable full keyboard access for all controls (e.g. enable Tab in modal dialogs)"
         defaults write NSGlobalDomain AppleKeyboardUIMode -int 3
@@ -144,8 +137,43 @@ setup_macos() {
         echo "Enable subpixel font rendering on non-Apple LCDs"
         defaults write NSGlobalDomain AppleFontSmoothing -int 2
 
-        echo "Use current directory as default search scope in Finder"
-        defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
+        echo "Disable press-and-hold for keys in favor of key repeat"
+        defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
+
+        echo "Set a shorter Delay until key repeat"
+        defaults write NSGlobalDomain InitialKeyRepeat -int 15
+
+        echo "Enable Safari’s debug menu"
+        defaults write com.apple.Safari IncludeInternalDebugMenu -bool true
+
+        ################################################################################
+        # Trackpad, mouse, keyboard, Bluetooth accessories, and input
+        ###############################################################################
+        echo "Set a blazingly fast keyboard repeat rate"
+        defaults write NSGlobalDomain KeyRepeat -int 1
+
+        echo "Increasing sound quality for Bluetooth headphones/headsets"
+        defaults write com.apple.BluetoothAudioAgent "Apple Bitpool Min (editable)" -int 40
+
+        echo "Disabling press-and-hold for special keys in favor of key repeat"
+        defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
+
+        echo "Enable tap to click (Trackpad) (NOT WORKING)"
+        # defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
+
+        ################################################################################
+        # SCREEN
+        ################################################################################
+        echo "Requiring password immediately after sleep or screen saver begins"
+        defaults write com.apple.screensaver askForPassword -int 1
+        defaults write com.apple.screensaver askForPasswordDelay -int 0
+
+
+        ################################################################################
+        # FINDER
+        ################################################################################
+        echo "Use column view in all Finder windows by default"
+        defaults write com.apple.finder FXPreferredViewStyle Clmv
 
         echo "Show Path bar in Finder"
         defaults write com.apple.finder ShowPathbar -bool true
@@ -153,20 +181,27 @@ setup_macos() {
         echo "Show Status bar in Finder"
         defaults write com.apple.finder ShowStatusBar -bool true
 
-        echo "Disable press-and-hold for keys in favor of key repeat"
-        defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false
+        echo "Use current directory as default search scope in Finder"
+        defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
 
-        echo "Set a blazingly fast keyboard repeat rate"
-        defaults write NSGlobalDomain KeyRepeat -int 1
+        echo "show the ~/Library folder in Finder"
+        chflags nohidden ~/Library
 
-        echo "Set a shorter Delay until key repeat"
-        defaults write NSGlobalDomain InitialKeyRepeat -int 15
+        echo "Finder: show all filename extensions"
+        defaults write NSGlobalDomain AppleShowAllExtensions -bool true
 
-        echo "Enable tap to click (Trackpad)"
-        defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
+        echo "show hidden files by default"
+        defaults write com.apple.Finder AppleShowAllFiles -bool false
 
-        echo "Enable Safari’s debug menu"
-        defaults write com.apple.Safari IncludeInternalDebugMenu -bool true
+        ################################################################################
+        # DOCK
+        ################################################################################
+
+        echo "Wipe all (default) app icons from the Dock"
+        defaults write com.apple.dock persistent-apps -array
+
+        echo "Setting Dock icon size"
+        defaults write com.apple.dock tilesize -int 36
 
         echo "Kill affected applications"
 
@@ -213,4 +248,4 @@ case "$1" in
 esac
 
 echo -e
-success "Done."
+ok "Done."

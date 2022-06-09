@@ -16,34 +16,34 @@ cask "font-jetbrains-mono"
 cask "font-cascadia-mono"
 
 # communication
-cask slack
-cask zoom
+cask "slack"
+cask "zoom"
 
 # coding
-cask firefox
-cask google-chrome
-cask visual-studio-code
-cask google-chrome-canary
-cask iterm2
-cask docker
-cask postman
+cask "firefox"
+cask "google-chrome"
+cask "visual-studio-code"
+cask "google-chrome-canary"
+cask "iterm2"
+cask "docker"
+cask "postman"
 
 # productivity
-cask notion
-cask todoist
-cask 1password
-cask setapp
-cask dropbox
-cask authy
-cask alfred
-cask rectangle
-cask parallels
-cask photosweeper-xr
-cask anki
-cask karabiner-elements
+cask "notion"
+cask "todoist"
+cask "1password"
+cask "setapp"
+cask "dropbox"
+cask "authy"
+cask "alfred"
+cask "rectangle"
+cask "parallels"
+cask "photosweeper-xr"
+cask "anki"
+cask "karabiner-elements"
 
 # investment
-cask tradingview
+cask "tradingview"
 
 tap "homebrew/bundle"
 tap "homebrew/core"
