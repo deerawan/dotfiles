@@ -41,6 +41,10 @@ setup_symlinks() {
             ln -s "$file" "$target"
         fi
     done
+
+    # karabiner - it needs to be put under .config folder
+    ln -s "./karabiner/karabiner.edn" "$HOME/.config/karabiner.edn"
+
 }
 
 setup_xcode() {

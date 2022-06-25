@@ -1,0 +1,152 @@
+;; README
+;; !  | means mandatory
+;; #  | means optional
+;; C  | left_command
+;; T  | left_control
+;; O  | left_option
+;; S  | left_shift
+;; F  | fn
+;; Q  | right_command
+;; W  | right_control
+;; E  | right_option
+;; R  | right_shift
+;; P  | caps_lock
+;; !! | mandatory command + control + optional + shift (hyper)
+;; ## | optional any
+;;
+;; rule [:period ["period-mode" 1] nil {:afterup ["period-mode" 0] :alone :period}] |_____| |_______________| |_| |_________________________________________|
+;;        <from>    <to>      <conditions>         <other options>
+
+{
+  :profiles {
+    :Default {
+      :default true
+
+      :sim 30     ;; simultaneous_threshold_milliseconds (def: 50)
+                  ;; if keydown event for two different keys are pressed within :sim ms, the keypresses are considered simultaneous
+      :delay 150  ;; to_delayed_action_delay_milliseconds (def: 500)
+                  ;; after :delay ms, the key press is considered to be delayed (used for double-press macros)
+      :alone 500  ;; to_if_alone_timeout_milliseconds (def: 1000)
+                  ;; if keyup event comes within :alone ms from keydown, the key is not just pressed but held
+      :held 50    ;; to_if_held_down_threshold_milliseconds (def: 500)
+                  ;; key is fired twice when :held ms is elapsed (otherwise seen as a hold command)
+    }
+  }
+
+  :templates {
+    :alfred "osascript -e 'tell application id \"com.runningwithcrayons.Alfred\" to run trigger \"%s\" in workflow \"%s\" with argument \"%s\"'"
+    :km "osascript -e 'tell application \"Keyboard Maestro Engine\" to do script \"%s\"'"
+    :open "open -a '%s.app'"
+    :openDir "open %s"
+  }
+
+  :simlayers {
+    :3-mode {:key :3}
+    :o-mode {:key :o}
+    :w-mode {:key :w}
+    :q-mode {:key :q}
+  }
+
+  :layers {
+    :caps-mode {:key :caps_lock :alone {:key :escape}}
+  }
+
+  :main [
+    {:des "left shift once -> ("
+    :rules [
+      [:##left_shift :left_shift nil {:alone :!S9} ]
+    ]}
+
+    {:des "right shift once -> )"
+    :rules [
+      [:##right_shift :right_shift nil {:alone :!S0} ]
+    ]}
+
+    {:des "3-mode (Open folders)"
+    :rules [:3-mode
+      [:d [:km "dir: dropbox"]]
+      [:i [:km "dir: identification"]]
+      [:o [:km "dir: downloads"]]
+    ]}
+
+    {:des "o-mode (Open apps)"
+    :rules [:o-mode
+      [:f [:open "Finder"]]
+      [:v [:open "Visual Studio Code"]]
+      [:g [:open "Google Chrome"]]
+      [:n [:open "Notion"]]
+      [:1 [:open "1Password"]]
+      [:t [:open "Todoist"]]
+      [:s [:open "Slack"]]
+      [:k [:open "Keyboard Maestro"]]
+      [:b [:open "BetterTouchTool"]]
+      [:i [:open "iTerm2"]]
+      [:c [:open "Cron"]]
+    ]}
+
+    {:des "w-mode (Open websites)"
+    :rules [:w-mode
+      [:g [:km "web: github"]]
+      [:l [:km "web: linkedin"]]
+      [:b [:km "web: budiirawan"]]
+      [:s [:km "web: stackoverflow"]]
+      [:y [:km "web: youtube"]]
+    ]}
+
+    {:des "caps-mode (Navigation)"
+    :rules [:caps-mode
+      [:##j :##left_arrow]
+      [:##k :##down_arrow]
+      [:##i :##up_arrow]
+      [:##l :##right_arrow]
+      [:##a :##left_arrow]
+      [:##s :##down_arrow]
+      [:##w :##up_arrow]
+      [:##f :##right_arrow]
+    ]}
+
+    {:des "q-mode (cmd + shift)"
+      :rules [:q-mode
+        [:3 :!CS3]
+        [:4 :!CS4]
+        [:5 :!CS5]
+        [:6 :!CS6]
+        [:7 :!CS7]
+        [:8 :!CS8]
+        [:9 :!CS9]
+        [:0 :!CS0]
+        [:w :!CSw]
+        [:e :!CSe]
+        [:r :!CSr]
+        [:t :!CSt]
+        [:y :!CSy]
+        [:u :!CSu]
+        [:i :!CSi]
+        [:o :!CSo]
+        [:p :!CSp]
+        [:open_bracket :!CSopen_bracket]
+        [:close_bracket :!CSclose_bracket]
+        [:a :!CSa]
+        [:s :!CSs]
+        [:d :!CSd]
+        [:f :!CSf]
+        [:g :!CSg]
+        [:h :!CSh]
+        [:j :!CSj]
+        [:k :!CSk]
+        [:l :!CSl]
+        [:semicolon :!CSsemicolon]
+        [:quote :!CSquote]
+        [:z :!CSz]
+        [:x :!CSx]
+        [:c :!CSc]
+        [:v :!CSv]
+        [:b :!CSb]
+        [:n :!CSn]
+        [:m :!CSm]
+        [:comma :!CScomma]
+        [:period :!CSperiod]
+        [:slash :!CSslash]
+        [:spacebar :!CSOe]]}
+  ]
+}
