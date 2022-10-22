@@ -1,6 +1,7 @@
 # taps
 tap "homebrew/cask"
 tap "homebrew/cask-fonts"
+tap "yqrashawn/goku"
 
 brew "noti" # utility to display notifications from scripts
 brew "trash" # rm, but put in the trash rather than completely delete
@@ -23,7 +24,6 @@ cask "zoom"
 cask "firefox"
 cask "google-chrome"
 cask "visual-studio-code"
-cask "google-chrome-canary"
 cask "iterm2"
 cask "docker"
 cask "postman"
@@ -35,10 +35,9 @@ cask "1password"
 cask "setapp"
 cask "dropbox"
 cask "authy"
-cask "alfred"
+cask "raycast"
 cask "rectangle"
 cask "parallels"
-cask "photosweeper-xr"
 cask "anki"
 cask "karabiner-elements"
 
