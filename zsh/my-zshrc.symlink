@@ -4,12 +4,3 @@ PATH="$PATH:$HOME/.bin";
 
 source $HOME/.aliases
 
-# ASDF
-. /usr/local/opt/asdf/libexec/asdf.sh
-
-# If a local zshrc exists, source it
-[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
-
-if [[ -a ~/.localrc ]]; then
-    source ~/.localrc
-fi
