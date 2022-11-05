@@ -19,6 +19,8 @@ cask "font-cascadia-mono"
 # communication
 cask "slack"
 cask "zoom"
+cask "discord"
+cask "telegrams"
 
 # coding
 cask "firefox"
