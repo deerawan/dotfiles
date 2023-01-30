@@ -75,3 +75,24 @@ alias nov="node --version"
 # cd places
 alias ds='cd ~/.ssh'
 
+# Git Helpers
+function main() {
+  DEFAULT_BRANCH=`git remote show origin | grep "HEAD branch" | sed 's/.*: //'`
+  git checkout $DEFAULT_BRANCH
+  git pull
+}
+
+function rmbranch() {
+	BRANCH=`git rev-parse --abbrev-ref HEAD`
+	DEFAULT_BRANCH=`git remote show origin | grep "HEAD branch" | sed 's/.*: //'`
+	git checkout $DEFAULT_BRANCH
+	git branch -D $BRANCH
+	git pull
+}
+
+function rebase() {
+	DEFAULT_BRANCH=`git remote show origin | grep "HEAD branch" | sed 's/.*: //'`
+	git fetch origin $DEFAULT_BRANCH
+	git rebase origin/$DEFAULT_BRANCH
+}
+
