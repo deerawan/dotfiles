@@ -75,6 +75,9 @@ alias nov="node --version"
 # cd places
 alias ds='cd ~/.ssh'
 
+# python
+alias python=/opt/homebrew/bin/python3
+
 # Git Helpers
 function main() {
   DEFAULT_BRANCH=`git remote show origin | grep "HEAD branch" | sed 's/.*: //'`
@@ -95,4 +98,3 @@ function rebase() {
 	git fetch origin $DEFAULT_BRANCH
 	git rebase origin/$DEFAULT_BRANCH
 }
-
