@@ -22,13 +22,13 @@
     :Default {
       :default true
 
-      :sim 30     ;; simultaneous_threshold_milliseconds (def: 50)
+      :sim 50     ;; simultaneous_threshold_milliseconds (def: 50)
                   ;; if keydown event for two different keys are pressed within :sim ms, the keypresses are considered simultaneous
-      :delay 150  ;; to_delayed_action_delay_milliseconds (def: 500)
+      :delay 500  ;; to_delayed_action_delay_milliseconds (def: 500)
                   ;; after :delay ms, the key press is considered to be delayed (used for double-press macros)
       :alone 500  ;; to_if_alone_timeout_milliseconds (def: 1000)
                   ;; if keyup event comes within :alone ms from keydown, the key is not just pressed but held
-      :held 50    ;; to_if_held_down_threshold_milliseconds (def: 500)
+      :held 500    ;; to_if_held_down_threshold_milliseconds (def: 500)
                   ;; key is fired twice when :held ms is elapsed (otherwise seen as a hold command)
     }
   }
@@ -38,6 +38,15 @@
     :km "osascript -e 'tell application \"Keyboard Maestro Engine\" to do script \"%s\"'"
     :open "open -a '%s.app'"
     :openDir "open %s"
+    :paste "osascript -e '
+      set prev to the clipboard
+      set the clipboard to \"%s\"
+      tell application \"System Events\"
+        keystroke \"v\" using command down
+        delay 0.1
+      end tell
+      set the clipboard to prev
+    '"
   }
 
   :simlayers {
@@ -45,6 +54,8 @@
     :o-mode {:key :o}
     :w-mode {:key :w}
     :q-mode {:key :q}
+
+    :emoji-mode {:key :e}
   }
 
   :layers {
@@ -147,6 +158,29 @@
         [:comma :!CScomma]
         [:period :!CSperiod]
         [:slash :!CSslash]
-        [:spacebar :!CSOe]]}
+        [:spacebar :!CSOe]
+    ]}
+
+    {:des "emoji"
+      :rules [:emoji-mode
+        [:b [:paste "😊"]] ;blush
+        [:c [:paste "👏"]] ;clap
+        [:f [:paste "🔥"]] ;fire
+        [:g [:paste "😬"]] ;grimace
+        [:h [:paste "😍"]] ;heart-eyes
+        [:i [:paste "👀"]] ;I
+        [:j [:paste "😂"]] ;joking
+        [:l [:paste "❤️"]] ;love
+        [:m [:paste "🤯"]] ;mind blown
+        [:p [:paste "🎉"]] ;party
+        [:s [:paste "😢"]] ;sad
+        [:t [:paste "🤔"]] ;thinking
+        [:u [:paste "🤷‍♂️"]] ;shrUg
+        [:v [:paste "😎"]] ;very cool
+        [:w [:paste "😉"]] ;wink:
+        [:y [:paste "😅"]] ;sweatY
+        [:9 [:paste "👍"]]
+        [:0 [:paste "👎"]]
+      ]}
   ]
 }
