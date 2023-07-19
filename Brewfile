@@ -42,6 +42,7 @@ cask "rectangle"
 cask "parallels"
 cask "anki"
 cask "karabiner-elements"
+cask "keyboard-maestro"
 
 # investment
 cask "tradingview"
@@ -75,3 +76,4 @@ brew "z" # switch between most used directories
 brew "zsh" # zsh (latest)
 brew "asdf" # asdf
 brew "yqrashawn/goku/goku" # goku for karabiner
+brew "watchexec" # required by goku
