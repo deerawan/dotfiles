@@ -30,20 +30,28 @@ backup() {
 
 
 setup_symlinks() {
+    create_symlink() {
+        local source=$1
+        local target=$2
+
+        if [ -L "$target" ]; then
+            action "~${target#$HOME} already exists... Skipping."
+        else
+            action "Creating symlink for $source"
+            ln -s "$source" "$target"
+        fi
+    }
+
     running "Creating symlinks"
 
     for file in $(get_linkables) ; do
         target="$HOME/.$(basename "$file" '.symlink')"
-        if [ -e "$target" ]; then
-            action "~${target#$HOME} already exists... Skipping."
-        else
-            action "Creating symlink for $file"
-            ln -s "$file" "$target"
-        fi
+        create_symlink "$file" "$target"
     done
 
     # karabiner - it needs to be put under .config folder
-    ln -s "./karabiner/karabiner.edn" "$HOME/.config/karabiner.edn"
+    target="$HOME/.config/karabiner.edn"
+    create_symlink "$DOTFILES/karabiner/karabiner.edn" "$target"
 
 }
 
@@ -96,7 +104,7 @@ setup_homebrew() {
     running "Setting up Homebrew"
 
     if test ! "$(command -v brew)"; then
-        action "Homebrew not installed. Installing."        
+        action "Homebrew not installed. Installing."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     fi
 
