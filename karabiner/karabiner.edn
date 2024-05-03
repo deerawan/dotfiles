@@ -103,12 +103,9 @@
       [:g [:open "Google Chrome"]]
       [:n [:open "Notion"]]
       [:1 [:open "1Password"]]
-      [:t [:open "Todoist"]]
       [:s [:open "Slack"]]
-      [:k [:open "Keyboard Maestro"]]
-      [:b [:open "BetterTouchTool"]]
       [:i [:open "iTerm2"]]
-      [:c [:open "Cron"]]
+      [:m [:open "TypingMind"]]
     ]}
 
     {:des "w-mode (Open websites)"
@@ -130,11 +127,6 @@
       [:##s :##down_arrow]
       [:##w :##up_arrow]
       [:##d :##right_arrow]
-    ]}
-
-    {:des "test"
-    :rules [:caps-mode
-      [:c [:open "Finder"]]
     ]}
 
     {:des "q-mode (cmd + shift)"
@@ -181,28 +173,5 @@
         [:slash :!CSslash]
         [:spacebar :!CSOe]
     ]}
-
-    {:des "emoji"
-      :rules [:emoji-mode
-        [:b [:paste "😊"]] ;blush
-        [:c [:paste "👏"]] ;clap
-        [:f [:paste "🔥"]] ;fire
-        [:g [:paste "😬"]] ;grimace
-        [:h [:paste "😍"]] ;heart-eyes
-        [:i [:paste "👀"]] ;I
-        [:j [:paste "😂"]] ;joking
-        [:l [:paste "❤️"]] ;love
-        [:m [:paste "🤯"]] ;mind blown
-        [:p [:paste "🎉"]] ;party
-        [:s [:paste "😢"]] ;sad
-        [:t [:paste "🤔"]] ;thinking
-        [:u [:paste "🤷‍♂️"]] ;shrUg
-        [:v [:paste "😎"]] ;very cool
-        [:w [:paste "😉"]] ;wink:
-        [:y [:paste "😅"]] ;sweatY
-        [:9 [:paste "🙂"]]
-        [:9 [:paste "😃"]]
-        [:0 [:paste "👍"]]
-      ]}
   ]
 }
