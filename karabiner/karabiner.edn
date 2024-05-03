@@ -52,12 +52,10 @@
   }
 
   :simlayers {
-    :3-mode {:key :3}
+    :f-mode {:key :f}
     :o-mode {:key :o}
     :w-mode {:key :w}
     :q-mode {:key :q}
-
-    :emoji-mode {:key :e}
   }
 
   :layers {
@@ -71,6 +69,7 @@
     ;; in rules [:a :1] -- [<from> <to>]
     ;; it means from key a to key 1
     ;; {:des "a to 1" :rules [[:a :1]]}
+    ;; {:des "c to insert 123" :rules [[:c [:1 :2 :3]]]}]}
 
     ;; [:a :1 :chrome] -- [<from> <to> <conditions>]
     ;; {:des "a to 1 only in chrome" :rules [[:a :1 :chrome]]}
@@ -89,11 +88,10 @@
       [:##right_shift :right_shift nil {:alone :!S0} ]
     ]}
 
-    {:des "3-mode (Open folders)"
-    :rules [:3-mode
-      [:d [:km "dir: dropbox"]]
-      [:i [:km "dir: identification"]]
-      [:o [:km "dir: downloads"]]
+    {:des "f-mode (Folders)"
+    :rules [:f-mode
+      [:i [:km "dir: identifikasi"]]
+      [:d [:km "dir: downloads"]]
     ]}
 
     {:des "o-mode (Open apps)"
