@@ -129,7 +129,7 @@
       [:##a :##left_arrow]
       [:##s :##down_arrow]
       [:##w :##up_arrow]
-      [:##f :##right_arrow]
+      [:##d :##right_arrow]
     ]}
 
     {:des "test"
