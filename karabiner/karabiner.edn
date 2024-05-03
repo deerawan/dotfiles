@@ -16,6 +16,8 @@
 ;;
 ;; rule [:period ["period-mode" 1] nil {:afterup ["period-mode" 0] :alone :period}] |_____| |_______________| |_| |_________________________________________|
 ;;        <from>    <to>      <conditions>         <other options>
+;;
+;; Reference: https://github.com/yqrashawn/GokuRakuJoudo/blob/master/tutorial.md
 
 {
   :profiles {
@@ -62,7 +64,21 @@
     :caps-mode {:key :caps_lock :alone {:key :escape}}
   }
 
+  ;; main                -> {:main [{:des "..." :rules [rule1 rule2 ...]}]}
+  ;; manipulator         -> {:des "..." :rules [rule1 rule2 ...]}
+  ;; manipulator's rules -> [rule1 rule2 ...]
   :main [
+    ;; in rules [:a :1] -- [<from> <to>]
+    ;; it means from key a to key 1
+    ;; {:des "a to 1" :rules [[:a :1]]}
+
+    ;; [:a :1 :chrome] -- [<from> <to> <conditions>]
+    ;; {:des "a to 1 only in chrome" :rules [[:a :1 :chrome]]}
+
+    ;; rule [[:j :l] :f19]
+    ;;       <from>  <to>
+    ;; {:des "simultaneous j l press to F19" :rules [[[:j :l] :f19]]}
+
     {:des "left shift once -> ("
     :rules [
       [:##left_shift :left_shift nil {:alone :!S9} ]
@@ -114,6 +130,11 @@
       [:##s :##down_arrow]
       [:##w :##up_arrow]
       [:##f :##right_arrow]
+    ]}
+
+    {:des "test"
+    :rules [:caps-mode
+      [:c [:open "Finder"]]
     ]}
 
     {:des "q-mode (cmd + shift)"
