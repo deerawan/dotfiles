@@ -209,7 +209,10 @@ setup_macos() {
         defaults write com.apple.dock persistent-apps -array
 
         echo "Setting Dock icon size"
-        defaults write com.apple.dock tilesize -int 36
+        defaults write com.apple.dock tilesize -int 16
+
+        echo "Enable Dock auto-hide"
+        defaults write com.apple.dock autohide -bool true
 
         echo "Kill affected applications"
 
