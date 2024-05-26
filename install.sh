@@ -179,6 +179,8 @@ setup_macos() {
         defaults write com.apple.screensaver askForPassword -int 1
         defaults write com.apple.screensaver askForPasswordDelay -int 0
 
+        echo "Disable clicking wallpaper to reveal desktop"
+        defaults write com.apple.WindowManager.plist EnableStandardClickToShowDesktop -bool false
 
         ################################################################################
         # FINDER
