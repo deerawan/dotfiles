@@ -179,8 +179,20 @@ setup_macos() {
         defaults write com.apple.screensaver askForPassword -int 1
         defaults write com.apple.screensaver askForPasswordDelay -int 0
 
+        ################################################################################
+        # WINDOW MANAGER
+        ################################################################################
         echo "Disable clicking wallpaper to reveal desktop"
-        defaults write com.apple.WindowManager.plist EnableStandardClickToShowDesktop -bool false
+        defaults write com.apple.WindowManager EnableStandardClickToShowDesktop -bool false
+
+        echo "Hide desktop icons"
+        defaults write com.apple.WindowManager StandardHideDesktopIcons -bool true
+
+        echo "Hide widgets on desktop"
+        defaults write com.apple.WindowManager StandardHideWidgets -bool true
+
+        echo "Hide widgets on stage manager"
+        defaults write com.apple.WindowManager StageManagerHideWidgets -bool true
 
         ################################################################################
         # FINDER
@@ -202,6 +214,18 @@ setup_macos() {
 
         echo "show hidden files by default"
         defaults write com.apple.Finder AppleShowAllFiles -bool false
+
+        echo "Disable show items on desktop"
+        defaults write com.apple.finder CreateDesktop -bool false
+
+        echo "Show 'budi' home folder in new Finder windows"
+        defaults write com.apple.finder NewWindowTarget -string 'budi'
+
+        echo "Use list view in all Finder windows"
+        defaults write com.apple.finder FXPreferredViewStyle -string 'Nlsv'
+
+        echo "Use current directory as default search scope in Finder"
+        defaults write com.apple.finder FXDefaultSearchScope -string 'SCcf'
 
         ################################################################################
         # DOCK
