@@ -53,6 +53,11 @@ setup_symlinks() {
     target="$HOME/.config/karabiner.edn"
     create_symlink "$DOTFILES/karabiner/karabiner.edn" "$target"
 
+    # claude settings
+    mkdir -p "$HOME/.claude"
+    create_symlink "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.json"
+    create_symlink "$DOTFILES/claude/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
+
 }
 
 setup_xcode() {
