@@ -58,6 +58,9 @@ setup_symlinks() {
     create_symlink "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.json"
     create_symlink "$DOTFILES/claude/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
 
+    # claude skills folder
+    create_symlink "$DOTFILES/claude/skills" "$HOME/.claude/skills"
+
 }
 
 setup_xcode() {
