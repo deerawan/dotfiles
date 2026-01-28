@@ -2,6 +2,9 @@
 
 PATH="$PATH:$HOME/.bin";
 
+# Claude Code with permissions skipped
+alias clauded="claude --dangerously-skip-permissions"
+
 source $HOME/.aliases
 
 # ASDF
