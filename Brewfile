@@ -1,6 +1,4 @@
 # taps
-tap "homebrew/cask"
-tap "homebrew/cask-fonts"
 tap "yqrashawn/goku"
 
 brew "noti" # utility to display notifications from scripts
@@ -20,7 +18,7 @@ cask "font-cascadia-mono"
 cask "slack"
 cask "zoom"
 cask "discord"
-cask "telegrams"
+cask "telegram"
 
 # coding
 cask "firefox"
@@ -47,9 +45,6 @@ cask "keyboard-maestro"
 # investment
 cask "tradingview"
 
-tap "homebrew/bundle"
-tap "homebrew/core"
-
 # packages
 brew "cloc" # lines of code counter
 brew "git-delta" # a better git diff
@@ -63,10 +58,10 @@ brew "grep" # grep (latest)
 brew "highlight" # code syntax highlighting
 brew "htop" # a top alternative
 brew "jq" # work with JSON files in shell scripts
-brew "neofetch" # pretty system info
-brew "python" # python (latst)
+brew "fastfetch" # pretty system info
+brew "python" # python (latest)
 brew "ripgrep" # very fast file searcher
-brew "shellcheck" # diagnostics for shell sripts
+brew "shellcheck" # diagnostics for shell scripts
 brew "tmux" # terminal multiplexer
 brew "tree" # pretty-print directory contents
 brew "vim" # Vim (latest)
