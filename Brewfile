@@ -37,6 +37,7 @@ cask "parallels"
 cask "anki"
 cask "karabiner-elements"
 cask "keyboard-maestro"
+cask "cleanshot"
 
 # investment
 cask "tradingview"
