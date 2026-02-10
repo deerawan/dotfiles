@@ -5,7 +5,6 @@ brew "noti" # utility to display notifications from scripts
 brew "trash" # rm, but put in the trash rather than completely delete
 
 # Applications
-cask "kitty" # a better terminal emulator
 cask "imageoptim" # a tool to optimize images
 cask "1password/tap/1password-cli"
 
@@ -33,10 +32,7 @@ cask "notion"
 cask "todoist"
 cask "1password"
 cask "setapp"
-cask "dropbox"
-cask "authy"
-cask "raycast"
-cask "rectangle"
+cask "google-drive"
 cask "parallels"
 cask "anki"
 cask "karabiner-elements"
