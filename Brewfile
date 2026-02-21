@@ -56,6 +56,7 @@ brew "highlight" # code syntax highlighting
 brew "htop" # a top alternative
 brew "jq" # work with JSON files in shell scripts
 brew "lazygit" # a simple terminal UI for git commands
+brew "mole" # a lightweight file manager
 brew "fastfetch" # pretty system info
 brew "python" # python (latest)
 brew "ripgrep" # very fast file searcher
