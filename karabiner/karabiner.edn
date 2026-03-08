@@ -96,14 +96,14 @@
 
     {:des "o-mode (Open apps)"
     :rules [:o-mode
-      [:b [:open "BusyCal"]]
+      [:c [:open "Calendar"]]
       [:f [:open "Finder"]]
       [:v [:open "Visual Studio Code"]]
       [:g [:open "Google Chrome"]]
       [:n [:open "Notion"]]
       [:1 [:open "1Password"]]
       [:s [:open "Slack"]]
-      [:i [:open "iTerm2"]]
+      [:i [:open "iTerm"]]
       [:m [:open "TypingMind"]]
     ]}
 
