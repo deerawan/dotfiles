@@ -2,8 +2,9 @@
 
 PATH="$PATH:$HOME/.bin";
 
-# Claude Code with permissions skipped
-alias clauded="claude --dangerously-skip-permissions"
+# Claude Code
+alias ccd="claude --dangerously-skip-permissions"
+alias ccdw="ccd --worktree"
 
 source $HOME/.aliases
 

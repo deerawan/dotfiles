@@ -6,7 +6,6 @@
   "permissions": {
     "defaultMode": "plan"
   },
-  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -38,6 +37,24 @@
             "timeout": 600
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/budi/.claude/hooks/gsd-context-monitor.js\""
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/budi/.claude/hooks/gsd-check-update.js\""
+          }
+        ]
       }
     ]
   },
@@ -53,7 +70,7 @@
     "code-simplifier@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true
   },
+  "effortLevel": "medium",
   "autoUpdatesChannel": "latest",
-  "skipDangerousModePermissionPrompt": true,
-  "effortLevel": "high"
+  "skipDangerousModePermissionPrompt": true
 }
