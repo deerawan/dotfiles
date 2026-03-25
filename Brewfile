@@ -31,11 +31,8 @@ cask "postman"
 
 # productivity
 cask "notion"
-cask "todoist"
 cask "1password"
-cask "setapp"
 cask "google-drive"
-cask "parallels"
 cask "anki"
 cask "karabiner-elements"
 cask "keyboard-maestro"
