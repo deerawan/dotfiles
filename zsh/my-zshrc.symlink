@@ -2,12 +2,18 @@
 
 PATH="$PATH:$HOME/.bin";
 
-# Claude Code
+# Claude Code with permissions skipped
 alias ccd="claude --dangerously-skip-permissions"
-alias ccdw="ccd --worktree"
 
 source $HOME/.aliases
 source $HOME/.worktrunk-functions
+
+# ASDF
+. /opt/homebrew/opt/asdf/libexec/asdf.sh
+
+# NVM
+export NVM_DIR="$HOME/.nvm"
+[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
 
 # If a local zshrc exists, source it
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
