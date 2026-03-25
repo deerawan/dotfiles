@@ -1,5 +1,6 @@
 # taps
 tap "yqrashawn/goku"
+tap "manaflow-ai/cmux"
 
 brew "noti" # utility to display notifications from scripts
 brew "trash" # rm, but put in the trash rather than completely delete
@@ -20,6 +21,7 @@ cask "discord"
 cask "telegram"
 
 # coding
+cask "cmux"
 cask "firefox"
 cask "google-chrome"
 cask "visual-studio-code"
@@ -69,5 +71,6 @@ brew "wget" # internet file retriever
 brew "z" # switch between most used directories
 brew "zsh" # zsh (latest)
 brew "asdf" # asdf
+brew "nvm" # Node version manager
 brew "yqrashawn/goku/goku" # goku for karabiner
 brew "watchexec" # required by goku
