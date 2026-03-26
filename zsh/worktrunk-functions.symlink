@@ -1,0 +1,217 @@
+# Git worktree + cmux workspace functions
+# Ported from https://github.com/roderik/dotfiles-2026/.config/fish/functions/
+
+__wt_repo_root() {
+  local root
+  root=$(git worktree list --porcelain 2>/dev/null | head -1 | sed 's/^worktree //')
+  if [[ -n "$root" ]]; then
+    echo "$root"
+    return 0
+  fi
+
+  root=$(for d in ~/Development/*/; do
+    [[ -d "$d/.git" ]] && echo "${d%/}"
+  done | sort | fzf --height=40% --reverse --header "Select repo" --with-nth=-1 --delimiter=/)
+
+  if [[ -n "$root" ]]; then
+    echo "$root"
+    return 0
+  fi
+  return 1
+}
+
+__wt_cmux_rename() {
+  local name="$1"
+  [[ -z "$name" ]] && return
+  command -v cmux &>/dev/null || return
+  [[ -n "$CMUX_WORKSPACE_ID" ]] || return
+  cmux workspace-action --action rename --title "$name" 2>/dev/null
+}
+
+__wt_cmux_setup() {
+  command -v cmux &>/dev/null || return 0
+
+  local force=false
+  for arg in "$@"; do
+    [[ "$arg" == "--force" ]] && force=true
+  done
+
+  # Resolve workspace ID
+  local ws_id
+  if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
+    ws_id="$CMUX_WORKSPACE_ID"
+  else
+    ws_id=$(cmux identify --json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['caller']['workspace_ref'])" 2>/dev/null)
+  fi
+  if [[ -z "$ws_id" ]]; then
+    echo "cmux: not in a workspace — skipping layout setup"
+    return 1
+  fi
+
+  local workdir="$PWD"
+
+  # Get current pane topology
+  local main_pane
+  main_pane=$(cmux list-panes --workspace "$ws_id" 2>/dev/null | grep -oE 'pane:[0-9]+' | head -1)
+  if [[ -z "$main_pane" ]]; then
+    echo "cmux: could not detect panes"
+    return 1
+  fi
+
+  # Idempotency guard — skip if layout already has multiple panes
+  local pane_count
+  pane_count=$(cmux list-panes --workspace "$ws_id" 2>/dev/null | grep -cE 'pane:[0-9]+')
+  if [[ "$pane_count" -gt 1 ]] && [[ "$force" == false ]]; then
+    return 0
+  fi
+
+  local main_surface
+  main_surface=$(cmux list-pane-surfaces --workspace "$ws_id" --pane "$main_pane" 2>/dev/null | grep -oE 'surface:[0-9]+' | head -1)
+  if [[ -z "$main_surface" ]]; then
+    echo "cmux: could not detect main surface"
+    return 1
+  fi
+
+  # 1. Right split → lazygit (full height, narrow)
+  local lg_surface
+  lg_surface=$(cmux new-split right --workspace "$ws_id" 2>/dev/null | grep -oE 'surface:[0-9]+' | head -1)
+  if [[ -n "$lg_surface" ]]; then
+    cmux resize-pane --workspace "$ws_id" --pane "$main_pane" -R --amount 200 2>/dev/null
+    cmux send --workspace "$ws_id" --surface "$lg_surface" "cd '$workdir' && lazygit\n" 2>/dev/null
+    cmux rename-tab --workspace "$ws_id" --surface "$lg_surface" "Git" 2>/dev/null
+  fi
+
+  # 2. Bottom split under main → terminal
+  local term_surface
+  term_surface=$(cmux new-split down --workspace "$ws_id" --surface "$main_surface" 2>/dev/null | grep -oE 'surface:[0-9]+' | head -1)
+  if [[ -n "$term_surface" ]]; then
+    cmux resize-pane --workspace "$ws_id" --pane "$main_pane" -D --amount 200 2>/dev/null
+    cmux send --workspace "$ws_id" --surface "$term_surface" "cd '$workdir'\n" 2>/dev/null
+    cmux rename-tab --workspace "$ws_id" --surface "$term_surface" "Terminal" 2>/dev/null
+  fi
+
+  # 3. Start Claude in main pane
+  cmux focus-pane --pane "$main_pane" --workspace "$ws_id" 2>/dev/null
+  cmux send --workspace "$ws_id" --surface "$main_surface" "claude --dangerously-skip-permissions\n" 2>/dev/null
+}
+
+wtc() {
+  local branch="$1"
+  [[ -z "$branch" ]] && { echo "Usage: wtc <branch-name>"; return 1; }
+
+  local repo_root
+  repo_root=$(__wt_repo_root) || return
+  [[ -z "$repo_root" ]] && return
+
+  if command -v cmux &>/dev/null; then
+    # Create a new cmux workspace and send all commands to it
+    local ws_uuid
+    ws_uuid=$(cmux new-workspace 2>/dev/null | awk '{print $2}')
+    if [[ -z "$ws_uuid" ]]; then
+      echo "cmux: failed to create new workspace"
+      return 1
+    fi
+
+    # Rename workspace
+    cmux workspace-action --action rename --workspace "$ws_uuid" --title "$branch" 2>/dev/null
+
+    # Get the main surface of the new workspace
+    local ws_pane ws_surface
+    ws_pane=$(cmux list-panes --workspace "$ws_uuid" 2>/dev/null | grep -oE 'pane:[0-9]+' | head -1)
+    ws_surface=$(cmux list-pane-surfaces --workspace "$ws_uuid" --pane "$ws_pane" 2>/dev/null | grep -oE 'surface:[0-9]+' | head -1)
+
+    # Send worktree creation + layout setup to the new workspace's terminal
+    cmux send --workspace "$ws_uuid" --surface "$ws_surface" \
+      "cd '$repo_root' && git fetch origin main && wt switch --create --base origin/main $branch && __wt_cmux_setup\n" 2>/dev/null
+
+    echo "Workspace '$branch' created."
+  else
+    # No cmux — just create worktree in current shell
+    cd "$repo_root" && git fetch origin main && wt switch --create --base origin/main "$@" || return 1
+    echo ""
+    echo "Worktree created: $PWD"
+  fi
+}
+
+wtpr() {
+  local input="$1"
+  [[ -z "$input" ]] && { echo "Usage: wtpr <pr-number|pr-url>"; return 1; }
+
+  local pr_number gh_repo_flag=""
+  if [[ "$input" =~ ^https://github\.com/([^/]+/[^/]+)/pull/([0-9]+) ]]; then
+    local repo_nwo="${match[1]}"
+    pr_number="${match[2]}"
+    gh_repo_flag="--repo $repo_nwo"
+  else
+    pr_number="$input"
+  fi
+
+  local repo_root
+  repo_root=$(__wt_repo_root) || return
+  [[ -z "$repo_root" ]] && return
+
+  local branch
+  branch=$(cd "$repo_root" && gh pr view "$pr_number" $gh_repo_flag --json headRefName -q .headRefName 2>/dev/null)
+  if [[ -z "$branch" ]]; then
+    echo "Error: could not resolve branch for PR #$pr_number"
+    return 1
+  fi
+
+  if command -v cmux &>/dev/null; then
+    local ws_uuid
+    ws_uuid=$(cmux new-workspace 2>/dev/null | awk '{print $2}')
+    if [[ -z "$ws_uuid" ]]; then
+      echo "cmux: failed to create new workspace"
+      return 1
+    fi
+
+    cmux workspace-action --action rename --workspace "$ws_uuid" --title "$branch" 2>/dev/null
+
+    local ws_pane ws_surface
+    ws_pane=$(cmux list-panes --workspace "$ws_uuid" 2>/dev/null | grep -oE 'pane:[0-9]+' | head -1)
+    ws_surface=$(cmux list-pane-surfaces --workspace "$ws_uuid" --pane "$ws_pane" 2>/dev/null | grep -oE 'surface:[0-9]+' | head -1)
+
+    cmux send --workspace "$ws_uuid" --surface "$ws_surface" \
+      "cd '$repo_root' && git fetch origin $branch && wt switch $branch && __wt_cmux_setup\n" 2>/dev/null
+
+    echo "Workspace '$branch' created for PR #$pr_number."
+  else
+    cd "$repo_root" && git fetch origin "$branch" && wt switch "$branch" || return 1
+    echo ""
+    echo "Worktree created for PR #$pr_number: $PWD"
+  fi
+}
+
+wtd() {
+  local current_branch
+  current_branch=$(git branch --show-current 2>/dev/null)
+
+  if [[ -z "$current_branch" ]]; then
+    echo "Error: not in a git repository"
+    return 1
+  fi
+
+  local main_worktree
+  main_worktree=$(git worktree list --porcelain | head -1 | sed 's/^worktree //')
+
+  if [[ "$PWD" == "$main_worktree" ]] || [[ "$PWD" == "$main_worktree"/* ]]; then
+    echo "Error: already in the main worktree — nothing to remove"
+    return 1
+  fi
+
+  # Capture cmux workspace ID before leaving
+  local ws_id="$CMUX_WORKSPACE_ID"
+
+  echo "Removing worktree: $current_branch"
+  cd "$main_worktree" || return 1
+  wt remove --yes --foreground --force "$current_branch"
+  git remote prune origin 2>/dev/null
+  git branch -D "$current_branch" 2>/dev/null
+  echo "Back in main worktree: $main_worktree"
+
+  # Close cmux workspace if we were inside one
+  if command -v cmux &>/dev/null && [[ -n "$ws_id" ]]; then
+    echo "Closing cmux workspace..."
+    cmux close-workspace --workspace "$ws_id" 2>/dev/null
+  fi
+}

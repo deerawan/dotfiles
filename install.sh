@@ -61,6 +61,10 @@ setup_symlinks() {
     # claude skills folder
     create_symlink "$DOTFILES/claude/skills" "$HOME/.claude/skills"
 
+    # worktrunk (wt) config
+    mkdir -p "$HOME/.config/worktrunk"
+    create_symlink "$DOTFILES/worktrunk/config.toml" "$HOME/.config/worktrunk/config.toml"
+
 }
 
 setup_xcode() {
