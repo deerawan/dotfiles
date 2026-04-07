@@ -1,8 +1,4 @@
 {
-  "attribution": {
-    "commit": "",
-    "pr": ""
-  },
   "permissions": {
     "defaultMode": "plan"
   },
@@ -70,7 +66,16 @@
     "code-simplifier@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true
   },
+  "extraKnownMarketplaces": {
+    "compound-engineering-plugin": {
+      "source": {
+        "source": "github",
+        "repo": "EveryInc/compound-engineering-plugin"
+      }
+    }
+  },
   "effortLevel": "medium",
   "autoUpdatesChannel": "latest",
+  "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true
 }
