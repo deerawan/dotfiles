@@ -20,6 +20,12 @@ __wt_repo_root() {
   return 1
 }
 
+__wt_install_deps() {
+  [[ -f pnpm-lock.yaml ]] && { pnpm install; return; }
+  [[ -f yarn.lock ]] && { yarn install; return; }
+  [[ -f package-lock.json ]] && { npm install; return; }
+}
+
 __wt_cmux_rename() {
   local name="$1"
   [[ -z "$name" ]] && return
@@ -122,12 +128,12 @@ wtc() {
 
     # Send worktree creation + layout setup to the new workspace's terminal
     cmux send --workspace "$ws_uuid" --surface "$ws_surface" \
-      "cd '$repo_root' && git fetch origin main && wt switch --create --base origin/main $branch && __wt_cmux_setup\n" 2>/dev/null
+      "cd '$repo_root' && git fetch origin main && wt switch --create --base origin/main $branch && __wt_install_deps && __wt_cmux_setup\n" 2>/dev/null
 
     echo "Workspace '$branch' created."
   else
     # No cmux — just create worktree in current shell
-    cd "$repo_root" && git fetch origin main && wt switch --create --base origin/main "$@" || return 1
+    cd "$repo_root" && git fetch origin main && wt switch --create --base origin/main "$@" && __wt_install_deps || return 1
     echo ""
     echo "Worktree created: $PWD"
   fi
@@ -138,9 +144,10 @@ wtpr() {
   [[ -z "$input" ]] && { echo "Usage: wtpr <pr-number|pr-url>"; return 1; }
 
   local pr_number gh_repo_flag=""
-  if [[ "$input" =~ ^https://github\.com/([^/]+/[^/]+)/pull/([0-9]+) ]]; then
-    local repo_nwo="${match[1]}"
-    pr_number="${match[2]}"
+  if [[ "$input" == https://github.com/*/pull/* ]]; then
+    local repo_nwo="${input#https://github.com/}"
+    repo_nwo="${repo_nwo%%/pull/*}"
+    pr_number="${input##*/}"
     gh_repo_flag="--repo $repo_nwo"
   else
     pr_number="$input"
@@ -172,11 +179,11 @@ wtpr() {
     ws_surface=$(cmux list-pane-surfaces --workspace "$ws_uuid" --pane "$ws_pane" 2>/dev/null | grep -oE 'surface:[0-9]+' | head -1)
 
     cmux send --workspace "$ws_uuid" --surface "$ws_surface" \
-      "cd '$repo_root' && git fetch origin $branch && wt switch $branch && __wt_cmux_setup\n" 2>/dev/null
+      "cd '$repo_root' && git fetch origin $branch && wt switch $branch && __wt_install_deps && __wt_cmux_setup\n" 2>/dev/null
 
     echo "Workspace '$branch' created for PR #$pr_number."
   else
-    cd "$repo_root" && git fetch origin "$branch" && wt switch "$branch" || return 1
+    cd "$repo_root" && git fetch origin "$branch" && wt switch "$branch" && __wt_install_deps || return 1
     echo ""
     echo "Worktree created for PR #$pr_number: $PWD"
   fi
