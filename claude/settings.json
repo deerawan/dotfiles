@@ -21,6 +21,36 @@
             "command": "python3 ~/.claude/hooks/file_validator.py"
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"~/.asdf/shims/node\" \"~/.claude/hooks/gsd-prompt-guard.js\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"~/.asdf/shims/node\" \"~/.claude/hooks/gsd-workflow-guard.js\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"~/.claude/hooks/gsd-validate-commit.sh\"",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -38,7 +68,29 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"/Users/budi/.claude/hooks/gsd-context-monitor.js\""
+            "command": "\"~/.asdf/shims/node\" \"~/.claude/hooks/gsd-context-monitor.js\"",
+            "timeout": 10
+          }
+        ],
+        "matcher": "Bash|Edit|Write|MultiEdit|Agent|Task"
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"~/.asdf/shims/node\" \"~/.claude/hooks/gsd-read-injection-scanner.js\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"~/.claude/hooks/gsd-phase-boundary.sh\"",
+            "timeout": 5
           }
         ]
       }
@@ -48,7 +100,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"/Users/budi/.claude/hooks/gsd-check-update.js\""
+            "command": "\"~/.asdf/shims/node\" \"~/.claude/hooks/gsd-check-update.js\""
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"~/.claude/hooks/gsd-session-state.sh\""
           }
         ]
       }
@@ -65,9 +125,16 @@
     "code-review@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true
+    "superpowers@claude-plugins-official": true,
+    "obsidian@obsidian-skills": true
   },
   "extraKnownMarketplaces": {
+    "obsidian-skills": {
+      "source": {
+        "source": "github",
+        "repo": "kepano/obsidian-skills"
+      }
+    },
     "compound-engineering-plugin": {
       "source": {
         "source": "github",
@@ -78,5 +145,7 @@
   "effortLevel": "medium",
   "autoUpdatesChannel": "latest",
   "autoDreamEnabled": true,
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "dark-daltonized",
+  "autoCompactEnabled": false
 }
