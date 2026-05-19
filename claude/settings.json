@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"~/.asdf/shims/node\" \"~/.claude/hooks/gsd-prompt-guard.js\"",
+            "command": "node ~/.claude/hooks/gsd-prompt-guard.js",
             "timeout": 5
           }
         ]
@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"~/.asdf/shims/node\" \"~/.claude/hooks/gsd-workflow-guard.js\"",
+            "command": "node ~/.claude/hooks/gsd-workflow-guard.js",
             "timeout": 5
           }
         ]
@@ -47,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"~/.claude/hooks/gsd-validate-commit.sh\"",
+            "command": "bash ~/.claude/hooks/gsd-validate-commit.sh",
             "timeout": 5
           }
         ]
@@ -68,7 +68,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"~/.asdf/shims/node\" \"~/.claude/hooks/gsd-context-monitor.js\"",
+            "command": "node ~/.claude/hooks/gsd-context-monitor.js",
             "timeout": 10
           }
         ],
@@ -79,7 +79,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"~/.asdf/shims/node\" \"~/.claude/hooks/gsd-read-injection-scanner.js\"",
+            "command": "node ~/.claude/hooks/gsd-read-injection-scanner.js",
             "timeout": 5
           }
         ]
@@ -89,7 +89,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"~/.claude/hooks/gsd-phase-boundary.sh\"",
+            "command": "bash ~/.claude/hooks/gsd-phase-boundary.sh",
             "timeout": 5
           }
         ]
@@ -100,7 +100,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"~/.asdf/shims/node\" \"~/.claude/hooks/gsd-check-update.js\""
+            "command": "node ~/.claude/hooks/gsd-check-update.js"
           }
         ]
       },
@@ -108,7 +108,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"~/.claude/hooks/gsd-session-state.sh\""
+            "command": "bash ~/.claude/hooks/gsd-session-state.sh"
           }
         ]
       }
