@@ -65,6 +65,10 @@ setup_symlinks() {
     mkdir -p "$HOME/.config/worktrunk"
     create_symlink "$DOTFILES/worktrunk/config.toml" "$HOME/.config/worktrunk/config.toml"
 
+    # agents skills folder
+    mkdir -p "$HOME/.agents"
+    create_symlink "$DOTFILES/agents/skills" "$HOME/.agents/skills"
+
 }
 
 setup_xcode() {
