@@ -147,7 +147,9 @@ wtpr() {
   if [[ "$input" == https://github.com/*/pull/* ]]; then
     local repo_nwo="${input#https://github.com/}"
     repo_nwo="${repo_nwo%%/pull/*}"
-    pr_number="${input##*/}"
+    pr_number="${input#*/pull/}"   # strip up to and incl. /pull/
+    pr_number="${pr_number%%/*}"   # drop trailing /files, /commits, etc.
+    pr_number="${pr_number%%[#?]*}" # drop #anchor or ?query
     gh_repo_flag="--repo $repo_nwo"
   else
     pr_number="$input"
