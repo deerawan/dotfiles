@@ -38,8 +38,12 @@ __wt_cmux_setup() {
   command -v cmux &>/dev/null || return 0
 
   local force=false
+  local initial_prompt=""
   for arg in "$@"; do
-    [[ "$arg" == "--force" ]] && force=true
+    case "$arg" in
+      --force) force=true ;;
+      --prompt=*) initial_prompt="${arg#--prompt=}" ;;
+    esac
   done
 
   # Resolve workspace ID
@@ -98,7 +102,12 @@ __wt_cmux_setup() {
 
   # 3. Start Claude in main pane
   cmux focus-pane --pane "$main_pane" --workspace "$ws_id" 2>/dev/null
-  cmux send --workspace "$ws_id" --surface "$main_surface" "claude --dangerously-skip-permissions\n" 2>/dev/null
+  local claude_cmd='claude --permission-mode auto'
+  if [[ -n "$initial_prompt" ]]; then
+    # Prompt is constructed without single quotes upstream (see wtj) so '...' wrapping is safe.
+    claude_cmd="claude --permission-mode auto '$initial_prompt'"
+  fi
+  cmux send --workspace "$ws_id" --surface "$main_surface" "$claude_cmd"$'\n' 2>/dev/null
 }
 
 wtc() {
@@ -189,6 +198,55 @@ wtpr() {
     cd "$repo_root" && git fetch origin "$branch" && wt switch "$branch" && __wt_install_deps || return 1
     echo ""
     echo "Worktree created for PR #$pr_number: $PWD"
+  fi
+}
+
+wtj() {
+  local input="$1"
+  [[ -z "$input" ]] && { echo "Usage: wtj <jira-ticket>  (e.g. wtj vp-3501)"; return 1; }
+
+  if [[ ! "$input" =~ ^[A-Za-z][A-Za-z0-9]*-[0-9]+$ ]]; then
+    echo "Error: '$input' does not look like a JIRA ticket (expected e.g. VP-3501)"
+    return 1
+  fi
+
+  local jira_key="${(U)input}"   # VP-3501
+  local branch="${(L)input}"     # vp-3501
+
+  local repo_root
+  repo_root=$(__wt_repo_root) || return
+  [[ -z "$repo_root" ]] && return
+
+  # Prompt intentionally single-quote-free so it can be wrapped in '...' when sent into the workspace shell.
+  local jira_prompt="You are working in a cmux workspace for JIRA ticket ${jira_key}. Please: (1) fetch the ticket title and description via the Atlassian MCP (mcp__claude_ai_Atlassian__getJiraIssue); (2) rename this workspace by running in bash: cmux workspace-action --action rename --title \"${jira_key} <short-title>\" — pick a concise 3-6 word summary from the ticket title; (3) explore the codebase and draft an implementation plan for this ticket before making changes."
+
+  if command -v cmux &>/dev/null; then
+    local ws_uuid
+    ws_uuid=$(cmux new-workspace 2>/dev/null | awk '{print $2}')
+    if [[ -z "$ws_uuid" ]]; then
+      echo "cmux: failed to create new workspace"
+      return 1
+    fi
+
+    cmux workspace-action --action rename --workspace "$ws_uuid" --title "$branch" 2>/dev/null
+
+    local ws_pane ws_surface
+    ws_pane=$(cmux list-panes --workspace "$ws_uuid" 2>/dev/null | grep -oE 'pane:[0-9]+' | head -1)
+    ws_surface=$(cmux list-pane-surfaces --workspace "$ws_uuid" --pane "$ws_pane" 2>/dev/null | grep -oE 'surface:[0-9]+' | head -1)
+
+    # %q-escape the prompt so it survives being embedded in the outer command string.
+    local prompt_arg
+    prompt_arg=$(printf '%q' "$jira_prompt")
+
+    cmux send --workspace "$ws_uuid" --surface "$ws_surface" \
+      "cd '$repo_root' && git fetch origin main && wt switch --create --base origin/main $branch && __wt_install_deps && __wt_cmux_setup --prompt=$prompt_arg"$'\n' 2>/dev/null
+
+    echo "Workspace '$branch' created for JIRA ticket $jira_key."
+  else
+    cd "$repo_root" && git fetch origin main && wt switch --create --base origin/main "$branch" && __wt_install_deps || return 1
+    echo ""
+    echo "Worktree created for $jira_key: $PWD"
+    echo "(cmux not installed — start claude manually with: claude --permission-mode auto)"
   fi
 }
 
