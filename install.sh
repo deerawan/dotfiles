@@ -57,6 +57,8 @@ setup_symlinks() {
     mkdir -p "$HOME/.claude"
     create_symlink "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.json"
     create_symlink "$DOTFILES/claude/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
+    create_symlink "$DOTFILES/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+    create_symlink "$DOTFILES/claude/VOICE.md" "$HOME/.claude/VOICE.md"
 
     # claude skills folder
     create_symlink "$DOTFILES/claude/skills" "$HOME/.claude/skills"
