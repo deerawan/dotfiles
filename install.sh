@@ -71,6 +71,10 @@ setup_symlinks() {
     mkdir -p "$HOME/.agents"
     create_symlink "$DOTFILES/agents/skills" "$HOME/.agents/skills"
 
+    # herdr config
+    mkdir -p "$HOME/.config/herdr"
+    create_symlink "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
+
 }
 
 setup_xcode() {
