@@ -26,6 +26,7 @@ cask "firefox"
 cask "google-chrome"
 cask "visual-studio-code"
 cask "iterm2"
+cask "wezterm" # GPU-accelerated terminal emulator
 cask "docker"
 cask "postman"
 
@@ -61,6 +62,7 @@ brew "python" # python (latest)
 brew "ripgrep" # very fast file searcher
 brew "shellcheck" # diagnostics for shell scripts
 brew "tmux" # terminal multiplexer
+brew "herdr" # agent multiplexer that lives in your terminal
 brew "tree" # pretty-print directory contents
 brew "vim" # Vim (latest)
 brew "wdiff" # word differences in text files
