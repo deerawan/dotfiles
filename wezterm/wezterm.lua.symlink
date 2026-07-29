@@ -8,4 +8,7 @@ end
 config.font = wezterm.font 'JetBrains Mono'
 config.font_size = 15.0
 
+-- Required for herdr's ctrl+alt+* direct bindings to be distinguishable.
+config.enable_kitty_keyboard = true
+
 return config
