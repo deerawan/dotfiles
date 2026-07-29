@@ -51,3 +51,5 @@
 
 [includeIf "gitdir/i:~/ProducePay/"]
     path = ~/ProducePay/.gitconfig
+[rerere]
+	enabled = true
