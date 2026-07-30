@@ -5,6 +5,9 @@ PATH="$PATH:$HOME/.bin";
 # Claude Code with permissions skipped
 alias ccd="claude --dangerously-skip-permissions"
 
+# Claude Code in auto permission mode
+alias cca="claude --permission-mode auto"
+
 source $HOME/.aliases
 source $HOME/.worktrunk-functions
 
