@@ -148,7 +148,7 @@ Approved: YYYY-MM-DD · Cap: <N> · Mode: <auto|yolo> · Step: <on|off>
 
 | Task | Branch | Parent | Wave |
 |---|---|---|---|
-| 3a | vp-1234-domain-model | vp-1234-add-exports-table | 2 |
+| 2 | abc-123-export-endpoint | abc-123-exports-table | 2 |
 
 ## Report
 <!-- appended at Step 8: PR urls, blocked, stuck, minor findings -->
