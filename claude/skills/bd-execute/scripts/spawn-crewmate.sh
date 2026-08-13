@@ -97,9 +97,10 @@ existing='{}'
 echo "$existing" | jq \
   --arg id "$task_id" --arg name "$agent_name" --arg pane "$pane_id" --arg tab "$tab_id" \
   --arg branch "$branch" --arg parent "$parent" --arg wt "$wt_path" \
-  --arg lead "$lead_name" \
+  --arg lead "$lead_name" --arg spawned "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   '.lead = $lead
-   | .[$id] = {name: $name, pane: $pane, tab: $tab, branch: $branch, parent: $parent, worktree: $wt}' > "$tmp"
+   | .[$id] = {name: $name, pane: $pane, tab: $tab, branch: $branch, parent: $parent,
+               worktree: $wt, spawned_at: $spawned}' > "$tmp"
 mv -f "$tmp" "$roster"
 
 # 5. Mark running, then deliver the order (addressed by name).

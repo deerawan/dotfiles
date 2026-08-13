@@ -1,7 +1,7 @@
 ---
 name: bd-execute
 description: Execute one phase of a bd-plan plan file as a herdr crew — a git worktree, herdr tab, and autonomous Claude session per task — producing stax-stacked draft PRs. The lead (this session) dispatches waves, supervises via herdr agent states and status files, and submits the stack; workers report back over the herdr socket. Use after a bd-plan plan is approved, when the user wants a phase implemented in parallel. Triggers on "bd-execute", "execute the plan as a crew", "run phase N of the plan", "implement the plan in parallel worktrees/tabs".
-argument-hint: "[plan file path or topic] [--phase N] [--cap N] [--step] [--yolo]"
+argument-hint: "[plan file path or topic] [--phase N] [--cap N] [--step] [--yolo] [--checkpoint]"
 disable-model-invocation: true
 ---
 
@@ -34,8 +34,10 @@ bd-ticket: glob, ask on multiple hits, list 5 most recent if empty).
 | `--cap N` | Max parallel crewmates per wave (default 4) |
 | `--step` | Human-stepped waves: pause after each wave settles and confirm before dispatching the next (recommended for a plan's first crew run) |
 | `--yolo` | Start crewmates with `--dangerously-skip-permissions` instead of the default `--permission-mode auto`. Only when the user explicitly passes it |
+| `--checkpoint` | Write `CHECKPOINT.md` for the in-flight run and stop. Spawns nothing, changes nothing else — use before clearing context (see Checkpoint) |
 
-Unrecognized `--` tokens: note and ignore.
+Unrecognized `--` tokens: note and ignore. `--checkpoint` skips Steps 0–8 entirely: resolve
+the run dir, write the checkpoint, report the path.
 
 Run state lives in `<run-dir>` = `~/.claude/bd-execute/<plan-slug>/`. The plan file stays the
 source of tasks; the run dir is execution state only, split so a run never loads more than it
@@ -45,7 +47,8 @@ needs:
 <run-dir>/
 ├── EXECUTION.md              ← index ONLY (≤ ~25 lines) — always read
 ├── phases/phase-<N>.md       ← that phase's frozen map + report — read only for that phase
-├── crew.json                 ← roster (agent names, panes, tabs, worktrees)
+├── crew.json                 ← roster (agent names, panes, tabs, worktrees, spawned_at)
+├── CHECKPOINT.md             ← ephemeral handoff for a context clear; deleted on resume
 ├── task-<id>.brief.md        ← each crewmate's order
 ├── task-<id>.status          ← each crewmate's ground truth
 └── task-<id>.pr.md           ← each crewmate's PR body
@@ -69,6 +72,11 @@ PR template: <path or none>
 **Read `EXECUTION.md` always; read a `phases/phase-<N>.md` only when working that phase** —
 except when computing a stack parent that lives in an earlier phase, where the branch column
 of that phase's file is the lookup. Never load every phase file "for context".
+
+**Every PR you mention is a clickable link** — in chat, in tables, in the phase file, in the
+plan write-back. Full URL (`https://github.com/<owner>/<repo>/pull/12258`), or the number as
+a markdown link (`[#12258](url)`) where a column would blow out. A bare `#12258` is not
+clickable in a terminal, so it never appears on its own.
 
 ## Step 0: Resolve Plan and Phase
 
@@ -174,14 +182,17 @@ For each task in the current wave (respect `--cap`; sub-batch if larger):
    The script creates the stax lane, opens the herdr tab, starts Claude, records the roster,
    marks the task `running`, and delivers the brief. Verify each `SPAWNED` line; a failed
    spawn stops dispatch (don't spawn the rest of the wave on top of an inconsistent state).
-3. Record wall-clock spawn time per task (stuck detection).
+3. Spawn time lands in `crew.json` as `spawned_at` automatically — read stuck-detection
+   times from there, never from memory, so a context clear can't lose them.
 
 ## Step 5: Supervise
 
 Two channels, and the status file always wins:
 
-- **Push:** crewmates message you (`herdr agent prompt <lead-name> "bd-execute[...]: ..."`).
-  Treat these as events, not truth — re-read the status file before acting.
+- **Push:** crewmates message you (`herdr agent prompt <lead-name> "bd-execute[...]: ..."`)
+  when they finish, block, hit a `DEVIATION` that affects the plan or a sibling, or see their
+  PR merge. Treat these as events, not truth — re-read the status file (or re-verify with
+  `gh`/`git`) before acting.
 - **Poll:** wait with a Monitor until-loop, every 60s:
   `~/.claude/skills/bd-execute/scripts/crew-status.sh <run-dir> <id...>` — exit 0 = wave
   settled. Each line is `id file-state herdr-state`.
@@ -192,12 +203,64 @@ Interventions (the only ones):
   ONE order: `herdr agent prompt <agent-name> "<answer>. Resume your brief."` (names from
   `crew.json`) — the crewmate rewrites its own status. If it needs the human, relay verbatim
   and wait.
+- **`DEVIATION` report** → a crewmate found something that breaks someone else's
+  assumptions, and it is still working. You are the only one who can see the blast radius,
+  so triage it the moment it arrives:
+  1. **Who else is affected?** Check the phase file for tasks whose brief consumes what
+     changed, or whose `Files:` list includes the file that moved.
+  2. **Running siblings** → relay it immediately and specifically:
+     `herdr agent prompt <their-name> "bd-execute[...]: task <id> changed <what> to <new
+     shape>. Re-check your work against it before reporting done."` A sibling coding against
+     a signature that no longer exists is the failure this whole channel exists to prevent.
+  3. **Unspawned tasks** → fix the brief before it is written; if the plan task itself is now
+     wrong, note the divergence in the phase file so it doesn't get re-derived later.
+  4. **Scope re-cut** (work landed in the wrong task, or a defect turned up outside anyone's
+     scope) → do not silently reassign; put it to the human with your recommendation.
+  5. **Record it** in the phase file's Report and in `CHECKPOINT.md` (a deviation you only
+     hold in context is lost on the next clear).
+
+  Never sit on a relay to "batch" it — the cost of a deviation is proportional to how long a
+  sibling keeps building on the stale assumption.
 - herdr-state `blocked` (permission prompt — auto mode still asks for actions outside its
   allowlist) → tell the user which tab needs a click; never approve on their behalf.
 - Running > 30 min past spawn, or file-state/herdr-state contradictions (e.g. `running` but
   agent `gone`) → report STUCK in chat with `herdr agent read <agent-name>` tail. **Never
   kill a crewmate** — the human decides.
 - `done` without commits on the branch (`git log <parent>..<branch>` empty) → treat as STUCK.
+- **PR merged → retire the lane.** Two ways you learn this, and either one starts the same
+  procedure:
+  - **The crewmate tells you** — it babysits its own PR, so it sees the merge first and
+    messages `task <id> MERGED on <branch> — worktree clean|DIRTY`. This is the normal path
+    and costs no polling.
+  - **You notice on a poll** — `gh pr view <branch> --json state,mergedAt` for tasks with
+    PRs, whenever you're already polling a wave. Covers crewmates that died or were closed.
+
+  A crewmate's message is an event, not proof: re-verify with `gh` and `git status` yourself
+  before removing anything. Then, per merged task, in this order:
+  1. Confirm it really merged and nothing is unsaved: state `MERGED`, and
+     `git -C <worktree> status --porcelain` empty. Dirty worktree → **stop and report**;
+     never force-remove someone's uncommitted work.
+  2. Tell the crewmate it's done, then close its tab:
+     `herdr agent prompt <agent-name> "PR merged — stand down; I'm closing this tab."`
+     then `herdr tab close <tab-id>` (ids from `crew.json`).
+  3. `stax worktree remove <branch> --delete-branch` — removes the lane and the local
+     branch. Without `--delete-branch` the branch lingers and later runs may mistake it for
+     live work.
+  4. Re-point any **unspawned** child whose frozen parent was this branch to the parent it
+     collapses to (trunk, or the nearest unmerged ancestor); note the change in the phase
+     file. Children already spawned keep their base — their PRs re-target on GitHub when the
+     base merges; do not rewrite their branches.
+  5. Record it: set the task's row in the phase file to `merged` and drop its entry from
+     `crew.json`.
+  Do this only for **merged** PRs — a closed-unmerged PR keeps its lane until the human says
+  otherwise. Never run `stax sync`'s bulk branch deletion to achieve this; retire lanes one
+  task at a time, so a surprise never takes a branch you still need.
+
+  Merges usually land after Step 8, when you are idle and polling nothing — so the crewmate
+  report is what keeps retirement working past the end of the run. Stay reachable: keep the
+  lead name claimed while any PR from this run is open, and release it (Step 8.4) only once
+  every task is merged or handed back to the human. If you find yourself in a fresh session
+  with lanes still around, run the same procedure over `crew.json` once.
 
 ## Step 6: Advance Waves
 
@@ -252,24 +315,86 @@ When no runnable tasks remain in the phase:
    ```
    Phase <N> — <name>
    Stack (merge bottom-up):
-     1. task <id>  <pr-url>   base <parent>  head <branch>
+     1. task <id>  [#<num>](<pr-url>)   base <parent>  head <branch>
      ...
    Blocked: <id> — <note>
    Stuck:   <id> — <state> since <time>
    Minor findings: <collected from status files>
    Babysitting: <task-id list> — each crewmate is watching its own PR and will report
-   back; it pauses for you on review decisions.
-   Tabs left open: <task-id list> — close with `herdr tab close <tab>`, lanes with
-   `stax worktree cleanup` after merge.
+   back; it pauses for you on review decisions, and reports the merge when it lands.
+   Tabs left open: <task-id list> — retired automatically as each PR merges (tab closed,
+   lane + branch removed); nothing for you to clean up by hand.
+   Retired this run: <task-id list — merged> (or `none`)
    Next: <checkpoint text from the plan, or "phase N+1 ready: /bd-execute <plan> --phase N+1">
    ```
-4. Leave crew tabs and lanes in place — they're the review surface. Cleanup is offered, never
-   done. Do release your own lead identity so a later run can re-claim it:
+4. Leave crew tabs and lanes in place — they're the review surface until each PR merges, at
+   which point the Step 5 retirement reclaims them one task at a time. Bulk cleanup is
+   offered, never done.
+
+   **Keep the lead identity while any PR from this run is open** — that name is the address
+   crewmates use to report their merges, and clearing it early strands them. Release it only
+   once every task is merged or handed back to the human:
    `herdr agent rename <run-slug>-lead --clear` and
    `herdr tab rename <own-tab-id> <previous label>`.
 
+## Checkpoint — clearing context mid-run
+
+A bd-execute run survives a context clear better than most work, because the crewmates are
+**separate live sessions**: clearing the lead loses supervision, not progress. Crewmates keep
+working, keep writing their status files, and keep pushing notifications at the lead name —
+which the next lead session inherits by re-claiming that name.
+
+Almost everything the lead knows is already on disk (phase file = the map, `crew.json` =
+addresses + `spawned_at`, `task-*.status` = progress). The checkpoint covers the rest — the
+judgment that isn't derivable.
+
+**Triggers — write it when any of these happen:**
+
+| Trigger | Who fires it |
+|---|---|
+| The user says "checkpoint", "I'm clearing context", "/clear soon", "compact", "pause this" | user, mid-run — write it, confirm in one line, then wait |
+| `/bd-execute <plan> --checkpoint` | user, from a session that lost the thread — re-read the run dir, write it, stop |
+| Right after answering a blocked crewmate, relaying a deviation, or putting a question to the human | you, automatically |
+| Before any wait longer than a poll cycle (a wave in flight, `--step` pause, babysitting) | you, automatically |
+
+Those last two matter most: an auto-compaction never announces itself, so a checkpoint that
+only gets written when asked is one that's missing exactly when it's needed. Write it as
+supervision events happen and it is always current — the explicit triggers then cost nothing
+but a refresh of the timestamp.
+
+Write `<run-dir>/CHECKPOINT.md`, overwriting the previous one:
+
+```markdown
+---
+phase: <N>
+wave: <W> of <total>
+updated: <ISO timestamp>
+---
+
+## Where we are
+<one paragraph: which wave is in flight, what settled, what's next>
+
+## Decisions I made
+- task <id> asked <question> → I answered <answer> (from <plan section / file>)
+
+## Deviations in flight
+- task <id> changed <what> → relayed to <siblings>, <unspawned tasks still to fix>
+
+## Open with the human
+- <question relayed, still unanswered> — crewmate <id> is waiting on it
+
+## Next action
+<the single first thing the next lead session should do>
+```
+
+Rules: overwrite, never append (it's a snapshot, not a log); record **why**, not just what;
+delete it on resume once its contents are absorbed — durable facts belong in the phase file,
+not here. Never put branch maps, PR urls, or task states in it — those are derivable, and a
+stale copy competing with the real files is worse than no copy.
+
 ## Resume
 
+Read `CHECKPOINT.md` first if it exists (then delete it after absorbing). Beyond it,
 `EXECUTION.md` + the phase file + status files + `crew.json` + `stax status` are the truth;
 trust them over memory. Read `EXECUTION.md` first (index), then only the target phase's
 `phases/phase-<N>.md` — it holds the approved branch map. **Never re-derive branch names or
@@ -278,6 +403,9 @@ existing branches. Then: `done` with commits on the branch = complete
 (never re-spawn). `running` with a live herdr agent = leave it alone; rejoin supervision.
 `running` with agent `gone` = re-offer at the dispatch gate as a re-spawn (same branch if it
 has commits — the lane persists). Un-spawned tasks resume with their frozen branch names.
+**Re-claim the lead identity** (`herdr agent rename <own-pane> <run-slug>-lead`, tab `lead`)
+so crewmate notifications land in the new session; check each crewmate's tab with
+`herdr agent read <agent-name>` for anything it reported while no lead was listening.
 Re-running a fully executed phase → nothing to do; point at the next phase. A phase with no
 row in the `EXECUTION.md` index was never approved — it goes through Steps 2–3 normally.
 
@@ -289,15 +417,21 @@ Not this skill's loop, but the one-liner the user needs: fix on the lower branch
 ## Never
 
 - Edit code, resolve conflicts, merge, rebase, or commit on any task branch.
+- Print a PR as a bare `#12258` — it must always be a clickable URL or `[#12258](url)`.
 - Spawn before the dispatch gate, a task whose dependencies aren't `done`, or two
   path-overlapping tasks in one wave.
 - Re-derive branch names or parents when `phases/phase-<N>.md` exists — the frozen map is the
   only source.
 - Put a branch table in `EXECUTION.md`, or load phase files you aren't working on.
+- Keep supervision state only in context — spawn times, decisions, and relayed questions go
+  to `crew.json` / `CHECKPOINT.md` as they happen, not at clear-time from memory.
 - Run spawn-crewmate.sh calls in parallel.
 - Kill or close a stuck crewmate's tab; approve a permission prompt on the human's behalf.
 - Execute tasks from a phase the user didn't select.
-- `stax sync` / `stax sweep` unasked (they delete branches).
+- `stax sync` / `stax sweep` unasked (they delete branches in bulk — retire merged lanes
+  one task at a time instead).
+- Remove a lane, delete a branch, or close a tab for a PR that is not `MERGED`, or whose
+  worktree has uncommitted changes.
 - Let a crewmate push or open PRs **before** the lead submits the stack (after Step 7.4 hands
   the PR back, pushing fixes to its own branch is exactly its job).
 

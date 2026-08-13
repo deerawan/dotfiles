@@ -52,9 +52,7 @@ test scenarios, verification, files, proposed code}
    if it reports failures, fix and re-run. Paste its FULL structured report into your PR
    body's Testing section — never summarize it into a one-line verdict. If none matches,
    note that in the Testing section instead. Never fabricate a report.
-7. Commit on `{branch}` with a descriptive message. Do NOT push. Do NOT create a PR. Do NOT
-   run stax submit — the lead submits the whole stack.
-5. Write your PR body to `{run-dir}/task-{task-id}.pr.md`, filling the repo's PR template at
+7. Write your PR body to `{run-dir}/task-{task-id}.pr.md`, filling the repo's PR template at
    `{pr-template-path}` (as discovered by the lead; if the lead marked it "none", write
    Problem / Solution / Acceptance Criteria / Testing sections free-form). **Copy the
    template's structure faithfully — every heading in its original order, and every HTML
@@ -62,6 +60,8 @@ test scenarios, verification, files, proposed code}
    inject content into those markers, and dropping them silently breaks it. This file IS the
    PR body; nothing else fills it. If `{parent}` is not `main`, add the line:
    `Stacked on \`{parent}\`; re-target to main once that merges.`
+8. Commit on `{branch}` with a descriptive message. Do NOT push. Do NOT create a PR. Do NOT
+   run stax submit — the lead submits the whole stack.
 
 ## Reporting protocol (mandatory)
 
@@ -82,6 +82,32 @@ test scenarios, verification, files, proposed code}
   `herdr agent prompt <their-name> "..."` (the `name` field) — but prefer escalating to the
   lead.
 
+### Report deviations immediately — don't wait until done
+
+You are working in isolation, so anything you discover that invalidates someone else's
+assumptions is invisible until you say it. **Message the lead the moment it happens**, not in
+your final report — a sibling may already be building on the thing you just changed.
+
+Send `herdr agent prompt {lead-name} "bd-execute[{run-slug}]: task {task-id} DEVIATION: <what
+changed> — affects <who/what>"` when any of these occur, then carry on working (this is a
+notification, not a blocked state — only stop if you actually need an answer):
+
+| Trigger | Why the lead needs it now |
+|---|---|
+| A signature, type, schema, or endpoint you **produce** differs from what your brief promised | Downstream tasks are coded against the promised shape |
+| You had to change a file outside your `Files:` list | That file may belong to a task in this or a later wave |
+| The plan's assumption about existing code turned out wrong (it works differently, or doesn't exist) | The plan itself is stale — later tasks inherit the same wrong premise |
+| You added, renamed, or moved something shared (migration, config key, feature flag, exported helper) | Siblings and later phases must use the new name |
+| Your task turns out to need work the plan gave to another task, or vice versa | Scope is drifting between tasks; only the lead can re-cut it |
+| You discover a defect outside your scope | Not yours to fix silently — the lead decides where it goes |
+
+Keep it to one or two lines: what changed, what it affects, and whether you need a decision.
+Put the same note in your PR body's Solution section so it survives the conversation.
+
+If a **contract you consume** changes under you (the lead relays a sibling's deviation),
+re-check your work against the new shape before reporting done — don't finish against a
+signature that no longer exists.
+
 ## After your PR exists
 
 The lead opens the PR, then sends you a follow-up order to babysit it. From that message on:
@@ -93,6 +119,15 @@ The lead opens the PR, then sends you a follow-up order to babysit it. From that
   feedback that changes intent.
 - Everything else in Never still applies: no merging, no rebasing onto trunk, no touching
   another task's branch, no re-targeting the PR base.
+- **Report the merge the moment you see it.** You are watching this PR, so you learn it
+  merged before anyone else. On any babysit pass where `gh pr view {branch} --json state`
+  returns `MERGED`:
+  1. Make sure nothing is unsaved — `git status --porcelain` must be empty; if it isn't, say
+     so in the message below instead of claiming clean.
+  2. `herdr agent prompt {lead-name} "bd-execute[{run-slug}]: task {task-id} MERGED on
+     {branch} — worktree clean, ready to retire"` (or `— worktree DIRTY: <what's there>`).
+  3. Stop babysitting and stop your loop. Do not delete your own worktree, branch, or tab —
+     the lead retires the lane; you'd be sawing off the branch you're sitting on.
 
 ## Never
 
@@ -101,4 +136,6 @@ The lead opens the PR, then sends you a follow-up order to babysit it. From that
 - Mark `done` with a red test suite.
 - Edit another task's files or branch.
 - Reply to the lead's prompts with questions you can answer from the brief or the codebase.
+- Sit on a deviation until your final report — if it changes what a sibling or the plan
+  assumed, the lead hears about it when it happens.
 ```
