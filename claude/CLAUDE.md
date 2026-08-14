@@ -80,9 +80,9 @@ When you're talking or posting on behalf of Budi - Confluence pages, Jira ticket
 
 This doesn't apply to code, code comments, or your own replies to me in chat.
 
-## 7. Keep CLAUDE.md Concise
+## 7. Keep CLAUDE.md and AGENTS.md Concise
 
-**When you add or update CLAUDE.md, write the tersest statement that's still clear.**
+**When you add or update CLAUDE.md or AGENTS.md, write the tersest statement that's still clear.**
 
 Every line costs context on every session. Cut filler, prefer short imperative rules over prose.
 
