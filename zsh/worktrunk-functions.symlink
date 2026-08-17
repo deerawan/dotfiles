@@ -26,6 +26,44 @@ __wt_install_deps() {
   [[ -f package-lock.json ]] && { npm install; return; }
 }
 
+# Path of the worktree holding $branch, per git itself.
+__wt_worktree_path() {
+  local repo_root="$1" branch="$2"
+  git -C "$repo_root" worktree list --porcelain 2>/dev/null \
+    | awk -v b="refs/heads/$branch" '/^worktree /{p=substr($0,10)} $0=="branch "b{print p; exit}'
+}
+
+# Open $branch's worktree as its own herdr workspace and echo "<workspace_id> <root_pane_id>".
+# Binding the workspace to the worktree is what nests it under the repo in the sidebar,
+# so the worktree must already exist before this is called.
+__wt_herdr_open() {
+  local repo_root="$1" branch="$2"
+
+  local wt_path
+  wt_path=$(__wt_worktree_path "$repo_root" "$branch")
+  if [[ -z "$wt_path" ]]; then
+    echo "herdr: could not locate the worktree for '$branch'" >&2
+    return 1
+  fi
+
+  local ws_json
+  ws_json=$(herdr worktree open --cwd "$repo_root" --path "$wt_path" --label "$branch" --focus 2>/dev/null)
+
+  local ws_id ws_pane
+  ws_id=$(jq -r '.result.workspace.workspace_id // empty' <<<"$ws_json")
+  ws_pane=$(jq -r '.result.root_pane.pane_id // empty' <<<"$ws_json")
+  if [[ -z "$ws_pane" ]]; then
+    echo "herdr: failed to open a workspace for '$branch'" >&2
+    return 1
+  fi
+
+  if [[ $(jq -r '.result.already_open // false' <<<"$ws_json") == true ]]; then
+    echo "herdr: reusing the workspace already open on '$branch'" >&2
+  fi
+
+  echo "$ws_id $ws_pane"
+}
+
 __wt_cmux_rename() {
   local name="$1"
   [[ -z "$name" ]] && return
@@ -110,6 +148,59 @@ __wt_cmux_setup() {
   cmux send --workspace "$ws_id" --surface "$main_surface" "$claude_cmd"$'\n' 2>/dev/null
 }
 
+__wt_herdr_setup() {
+  [[ "${HERDR_ENV:-}" == 1 ]] || return 0
+  command -v herdr &>/dev/null || return 0
+
+  local force=false
+  local initial_prompt=""
+  for arg in "$@"; do
+    case "$arg" in
+      --force) force=true ;;
+      --prompt=*) initial_prompt="${arg#--prompt=}" ;;
+    esac
+  done
+
+  # herdr injects the caller's pane context into every managed pane
+  local main_pane="$HERDR_PANE_ID"
+  if [[ -z "$main_pane" ]]; then
+    echo "herdr: not in a managed pane — skipping layout setup"
+    return 1
+  fi
+
+  local workdir="$PWD"
+
+  # Idempotency guard — skip if layout already has multiple panes
+  local pane_count
+  pane_count=$(herdr pane layout --pane "$main_pane" 2>/dev/null | jq '.result.layout.panes | length' 2>/dev/null)
+  if [[ "$pane_count" -gt 1 ]] && [[ "$force" == false ]]; then
+    return 0
+  fi
+
+  # 1. Right split → lazygit (full height, narrow). --ratio is the original pane's share.
+  local lg_pane
+  lg_pane=$(herdr pane split "$main_pane" --direction right --ratio 0.72 --cwd "$workdir" --no-focus 2>/dev/null \
+    | jq -r '.result.pane.pane_id // empty')
+  if [[ -n "$lg_pane" ]]; then
+    herdr pane rename "$lg_pane" "Git" >/dev/null 2>&1
+    herdr pane run "$lg_pane" "lazygit" >/dev/null 2>&1
+  fi
+
+  # 2. Bottom split under main → terminal
+  local term_pane
+  term_pane=$(herdr pane split "$main_pane" --direction down --ratio 0.75 --cwd "$workdir" --no-focus 2>/dev/null \
+    | jq -r '.result.pane.pane_id // empty')
+  [[ -n "$term_pane" ]] && herdr pane rename "$term_pane" "Terminal" >/dev/null 2>&1
+
+  # 3. Start Claude in main pane
+  local claude_cmd='claude --permission-mode auto'
+  if [[ -n "$initial_prompt" ]]; then
+    # Prompt is constructed without single quotes upstream so '...' wrapping is safe.
+    claude_cmd="claude --permission-mode auto '$initial_prompt'"
+  fi
+  herdr pane run "$main_pane" "$claude_cmd" >/dev/null 2>&1
+}
+
 wtc() {
   local branch="$1"
   [[ -z "$branch" ]] && { echo "Usage: wtc <branch-name>"; return 1; }
@@ -118,7 +209,19 @@ wtc() {
   repo_root=$(__wt_repo_root) || return
   [[ -z "$repo_root" ]] && return
 
-  if command -v cmux &>/dev/null; then
+  # Always open the branch in its own workspace — never take over the current one.
+  if command -v herdr &>/dev/null && herdr workspace list >/dev/null 2>&1; then
+    # Create the worktree here so herdr can bind the workspace to it.
+    ( cd "$repo_root" && git fetch origin main && wt switch --create --base origin/main "$branch" ) || return 1
+
+    local ws_id ws_pane
+    read -r ws_id ws_pane <<<"$(__wt_herdr_open "$repo_root" "$branch")" || return 1
+    [[ -z "$ws_pane" ]] && return 1
+
+    herdr pane run "$ws_pane" "__wt_install_deps && __wt_herdr_setup" >/dev/null 2>&1
+
+    echo "Workspace '$branch' ($ws_id) created."
+  elif command -v cmux &>/dev/null; then
     # Create a new cmux workspace and send all commands to it
     local ws_uuid
     ws_uuid=$(cmux new-workspace 2>/dev/null | awk '{print $2}')
@@ -141,7 +244,7 @@ wtc() {
 
     echo "Workspace '$branch' created."
   else
-    # No cmux — just create worktree in current shell
+    # No herdr/cmux — just create worktree in current shell
     cd "$repo_root" && git fetch origin main && wt switch --create --base origin/main "$@" && __wt_install_deps || return 1
     echo ""
     echo "Worktree created: $PWD"
@@ -176,7 +279,19 @@ wtpr() {
     return 1
   fi
 
-  if command -v cmux &>/dev/null; then
+  # Always open the PR in its own workspace — never take over the current one.
+  if command -v herdr &>/dev/null && herdr workspace list >/dev/null 2>&1; then
+    # Create the worktree here so herdr can bind the workspace to it.
+    ( cd "$repo_root" && git fetch origin "$branch" && wt switch "$branch" ) || return 1
+
+    local ws_id ws_pane
+    read -r ws_id ws_pane <<<"$(__wt_herdr_open "$repo_root" "$branch")" || return 1
+    [[ -z "$ws_pane" ]] && return 1
+
+    herdr pane run "$ws_pane" "__wt_install_deps && __wt_herdr_setup" >/dev/null 2>&1
+
+    echo "Workspace '$branch' ($ws_id) created for PR #$pr_number."
+  elif command -v cmux &>/dev/null; then
     local ws_uuid
     ws_uuid=$(cmux new-workspace 2>/dev/null | awk '{print $2}')
     if [[ -z "$ws_uuid" ]]; then
@@ -218,9 +333,31 @@ wtj() {
   [[ -z "$repo_root" ]] && return
 
   # Prompt intentionally single-quote-free so it can be wrapped in '...' when sent into the workspace shell.
-  local jira_prompt="You are working in a cmux workspace for JIRA ticket ${jira_key}. Please: (1) fetch the ticket title and description via the Atlassian MCP (mcp__claude_ai_Atlassian__getJiraIssue); (2) rename this workspace by running in bash: cmux workspace-action --action rename --title \"${jira_key} <short-title>\" — pick a concise 3-6 word summary from the ticket title; (3) explore the codebase and draft an implementation plan for this ticket before making changes."
+  # The rename step differs per workspace manager, so it is spliced in by the branches below.
+  local jira_prompt_pre="You are working in a workspace for JIRA ticket ${jira_key}. Please: (1) fetch the ticket title and description via the Atlassian MCP (mcp__claude_ai_Atlassian__getJiraIssue); (2) rename this workspace by running in bash: "
+  local jira_prompt_post=" — pick a concise 3-6 word summary from the ticket title; (3) explore the codebase and draft an implementation plan for this ticket before making changes."
+  local jira_prompt prompt_arg
 
-  if command -v cmux &>/dev/null; then
+  # Always open the ticket in its own workspace — never take over the current one.
+  if command -v herdr &>/dev/null && herdr workspace list >/dev/null 2>&1; then
+    # Create the worktree here so herdr can bind the workspace to it.
+    ( cd "$repo_root" && git fetch origin main && wt switch --create --base origin/main "$branch" ) || return 1
+
+    local ws_id ws_pane
+    read -r ws_id ws_pane <<<"$(__wt_herdr_open "$repo_root" "$branch")" || return 1
+    [[ -z "$ws_pane" ]] && return 1
+
+    # \$HERDR_WORKSPACE_ID stays literal so it expands in the agent's own shell.
+    jira_prompt="${jira_prompt_pre}herdr workspace rename \"\$HERDR_WORKSPACE_ID\" \"${jira_key} <short-title>\"${jira_prompt_post}"
+    # %q-escape the prompt so it survives being embedded in the outer command string.
+    prompt_arg=$(printf '%q' "$jira_prompt")
+
+    herdr pane run "$ws_pane" "__wt_install_deps && __wt_herdr_setup --prompt=$prompt_arg" >/dev/null 2>&1
+
+    echo "Workspace '$branch' ($ws_id) created for JIRA ticket $jira_key."
+  elif command -v cmux &>/dev/null; then
+    jira_prompt="${jira_prompt_pre}cmux workspace-action --action rename --title \"${jira_key} <short-title>\"${jira_prompt_post}"
+
     local ws_uuid
     ws_uuid=$(cmux new-workspace 2>/dev/null | awk '{print $2}')
     if [[ -z "$ws_uuid" ]]; then
@@ -235,7 +372,6 @@ wtj() {
     ws_surface=$(cmux list-pane-surfaces --workspace "$ws_uuid" --pane "$ws_pane" 2>/dev/null | grep -oE 'surface:[0-9]+' | head -1)
 
     # %q-escape the prompt so it survives being embedded in the outer command string.
-    local prompt_arg
     prompt_arg=$(printf '%q' "$jira_prompt")
 
     cmux send --workspace "$ws_uuid" --surface "$ws_surface" \
@@ -246,7 +382,7 @@ wtj() {
     cd "$repo_root" && git fetch origin main && wt switch --create --base origin/main "$branch" && __wt_install_deps || return 1
     echo ""
     echo "Worktree created for $jira_key: $PWD"
-    echo "(cmux not installed — start claude manually with: claude --permission-mode auto)"
+    echo "(no herdr/cmux session — start claude manually with: claude --permission-mode auto)"
   fi
 }
 
