@@ -1,6 +1,6 @@
 ---
 name: bd-execute
-description: Execute one phase of a bd-plan plan file as a herdr crew — a git worktree, herdr tab, and autonomous Claude session per task — producing stax-stacked draft PRs. The lead (this session) dispatches waves, supervises via herdr agent states and status files, and submits the stack; workers report back over the herdr socket. Use after a bd-plan plan is approved, when the user wants a phase implemented in parallel. Triggers on "bd-execute", "execute the plan as a crew", "run phase N of the plan", "implement the plan in parallel worktrees/tabs".
+description: Execute one phase of a bd-plan plan file as a herdr crew — a git worktree, herdr tab, and autonomous Claude session per task — producing stax-stacked draft PRs. The lead (this session) dispatches waves, supervises via herdr agent states and status files, and submits the stack; workers report back over the herdr socket. This skill executes, it never plans: it exits plan mode at its dispatch gate rather than entering it, so run it only on a plan that is already approved. Use after a bd-plan plan is approved, when the user wants a phase implemented in parallel. Triggers on "bd-execute", "execute the plan as a crew", "run phase N of the plan", "implement the plan in parallel worktrees/tabs".
 argument-hint: "[plan file path or topic] [--phase N] [--cap N] [--step] [--yolo] [--checkpoint]"
 disable-model-invocation: true
 ---
@@ -95,6 +95,12 @@ clickable in a terminal, so it never appears on its own.
 
 Run and report failures as one batch; each is fatal unless noted:
 
+0. **Plan mode check, first.** bd-execute is an execution skill: it writes briefs, creates
+   worktrees, spawns processes, and pushes. Under plan mode the harness blocks all of that,
+   and a run that discovers this halfway through leaves a half-built crew. Note whether plan
+   mode is active — Step 3 uses `ExitPlanMode` as its gate if so. **Never call
+   `EnterPlanMode` here**; planning belongs to `bd-plan`, and this skill has nothing
+   read-only to offer.
 1. `stax --version` and `stax doctor` in the repo — if the repo isn't initialized, run
    `stax init` (trunk = the repo default branch). `jq`, `gh auth status`, `herdr status`
    (server running).
@@ -144,8 +150,19 @@ Sanity: DAG (no cycles); every parent is trunk or a branch created by this plan.
 ## Step 3: Dispatch Gate (non-bypassable)
 
 Present the dispatch table — task, branch, parent, wave, tab label, worktree — plus cap,
-permission mode, and any checkpoint warning from Step 0.4. Confirm via `AskUserQuestion`.
-**Spawn nothing before approval — even on resume.**
+permission mode, and any checkpoint warning from Step 0.4. **Spawn nothing before approval —
+even on resume.**
+
+How you gate depends on the harness state noted in Step 1.0:
+
+- **Plan mode active** (the usual case straight after `bd-plan`): present the dispatch table
+  as the plan and call `ExitPlanMode`. That single call is both "leave read-only" and "start
+  the crew" — do not also ask via `AskUserQuestion`; two gates for one decision reads as a
+  stall. Approval means execution starts now.
+- **Plan mode not active:** confirm via `AskUserQuestion`.
+
+Either way, a rejection or a request for changes is not approval: revise the map (Step 2) and
+gate again. Never spawn to "show what it would look like".
 
 On approval, **before spawning anything**, write `<run-dir>/phases/phase-<N>.md`:
 
@@ -440,6 +457,8 @@ Not this skill's loop, but the one-liner the user needs: fix on the lower branch
 Before the dispatch gate:
 
 - [ ] Plan resolved; phase selected; executed tasks skipped
+- [ ] Plan-mode state noted, so the gate uses `ExitPlanMode` (in plan mode) or
+      `AskUserQuestion` (not) — one gate, never both, and `EnterPlanMode` never called
 - [ ] Preflight green: stax doctor, herdr server, gh auth, jq; workspace recorded; lead agent
       renamed to `<run-slug>-lead` and its tab to `lead` (previous tab label saved for restore)
 - [ ] Branch map: every parent is trunk or an in-plan branch; waves are a DAG; no
