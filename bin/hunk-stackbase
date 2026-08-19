@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Shim for the herdr hunkdiff plugin's `hunk.bin`.
+#
+# The plugin resolves a branch review's base as origin/HEAD, so every layer of a
+# stacked PR diffs against main instead of the layer below it. Rewrite that one
+# argument to the PR's real base ref; pass every other invocation through
+# untouched, including the `session` commands the plugin uses for its comment
+# roundtrip.
+
+set -u
+
+real_hunk=${HUNK_REAL:-/opt/homebrew/bin/hunk}
+[[ -x $real_hunk ]] || real_hunk=$(command -v hunk) || exit 127
+
+# Only branch reviews are rewritable, and the plugin always emits `<base>...HEAD`.
+if [[ ${1:-} != diff || ${2:-} != *...HEAD ]]; then
+  exec "$real_hunk" "$@"
+fi
+
+base=$(gh pr view --json baseRefName -q .baseRefName 2>/dev/null) || base=
+if [[ -z $base ]]; then
+  exec "$real_hunk" "$@"
+fi
+
+for ref in "origin/$base" "$base"; do
+  if git rev-parse --verify --quiet "$ref^{commit}" >/dev/null; then
+    shift 2
+    exec "$real_hunk" diff "$ref...HEAD" "$@"
+  fi
+done
+
+exec "$real_hunk" "$@"

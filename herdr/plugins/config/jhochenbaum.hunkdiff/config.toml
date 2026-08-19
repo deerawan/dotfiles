@@ -1,0 +1,4 @@
+# Route the plugin through a shim that rewrites a branch review's base to the
+# PR's real base ref, so stacked PRs diff against the layer below instead of main.
+[hunk]
+bin = "/Users/budi/dotfiles/bin/hunk-stackbase"

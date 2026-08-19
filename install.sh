@@ -75,6 +75,10 @@ setup_symlinks() {
     mkdir -p "$HOME/.config/herdr"
     create_symlink "$DOTFILES/herdr/config.toml" "$HOME/.config/herdr/config.toml"
 
+    # herdr plugin config
+    mkdir -p "$HOME/.config/herdr/plugins"
+    create_symlink "$DOTFILES/herdr/plugins/config" "$HOME/.config/herdr/plugins/config"
+
 }
 
 setup_xcode() {
