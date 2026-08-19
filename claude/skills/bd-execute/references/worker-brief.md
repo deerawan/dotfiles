@@ -49,17 +49,29 @@ test scenarios, verification, files, proposed code}
    Minor findings for your status file.
 6. **Domain testing** — check your session's available agents and skills for any tester
    whose domain matches what you changed. If one matches, dispatch it against your change;
-   if it reports failures, fix and re-run. Paste its FULL structured report into your PR
-   body's Testing section — never summarize it into a one-line verdict. If none matches,
-   note that in the Testing section instead. Never fabricate a report.
-7. Write your PR body to `{run-dir}/task-{task-id}.pr.md`, filling the repo's PR template at
-   `{pr-template-path}` (as discovered by the lead; if the lead marked it "none", write
-   Problem / Solution / Acceptance Criteria / Testing sections free-form). **Copy the
-   template's structure faithfully — every heading in its original order, and every HTML
-   comment marker verbatim**, including ones that look like empty placeholders: CI can
-   inject content into those markers, and dropping them silently breaks it. This file IS the
-   PR body; nothing else fills it. If `{parent}` is not `main`, add the line:
-   `Stacked on \`{parent}\`; re-target to main once that merges.`
+   if it reports failures, fix and re-run. Save its FULL structured report to
+   `{run-dir}/task-{task-id}.testing.md` — verbatim, never summarised, so the lead and the
+   human can read the real thing. If none matches, write that fact in the file instead.
+   Never fabricate a report. **The full report does not go in the PR body** (see next step).
+7. Write your PR body to `{run-dir}/task-{task-id}.pr.md`. This file IS the PR body; nothing
+   else fills it.
+   - **If a PR-description skill is available in your session, invoke it first** and follow
+     its budget. Otherwise apply this: a PR body is a decision aid, not a work log —
+     ~150–300 words for a normal task, and **always shorter than the diff it describes**.
+     Count it (`wc -w`) before you finish; don't estimate.
+   - Fill the repo's template at `{pr-template-path}` (if the lead marked it "none", write
+     Problem / Solution / Acceptance Criteria / Testing). **Copy the template's structure
+     faithfully — every heading in its original order, and every HTML comment marker
+     verbatim**, including ones that look like empty placeholders: CI can inject content into
+     those markers, and dropping them silently breaks it.
+   - **Testing section: results, not transcripts.** One line per check — what you ran and
+     that it passed. The full tester report lives in `task-{task-id}.testing.md`; reference
+     it, don't paste it.
+   - **Never in a PR body:** command output or logs, test-run transcripts, a narration of
+     your commits or of what you tried first, restatements of the diff, or the plan task
+     pasted back. The reviewer has the diff; they need why it exists and what could go wrong.
+   - If `{parent}` is not `main`, add the line:
+     `Stacked on \`{parent}\`; re-target to main once that merges.`
 8. Commit on `{branch}` with a descriptive message. Do NOT push. Do NOT create a PR. Do NOT
    run stax submit — the lead submits the whole stack.
 
@@ -102,37 +114,17 @@ notification, not a blocked state — only stop if you actually need an answer):
 | You discover a defect outside your scope | Not yours to fix silently — the lead decides where it goes |
 
 Keep it to one or two lines: what changed, what it affects, and whether you need a decision.
-Put the same note in your PR body's Solution section so it survives the conversation.
+Note it in your PR body too — one sentence in Solution, not a retelling.
 
 If a **contract you consume** changes under you (the lead relays a sibling's deviation),
 re-check your work against the new shape before reporting done — don't finish against a
 signature that no longer exists.
 
-## After your PR exists
-
-The lead opens the PR, then sends you a follow-up order to babysit it. From that message on:
-
-- You MAY commit and push fixes **to your own branch** — the no-push rule below is lifted for
-  `{branch}` only, and only after that order arrives.
-- Watch CI, fix failures locally, and handle review comments. Report back to `{lead-name}`
-  when the PR is green, or when something needs a human decision — don't guess on review
-  feedback that changes intent.
-- Everything else in Never still applies: no merging, no rebasing onto trunk, no touching
-  another task's branch, no re-targeting the PR base.
-- **Report the merge the moment you see it.** You are watching this PR, so you learn it
-  merged before anyone else. On any babysit pass where `gh pr view {branch} --json state`
-  returns `MERGED`:
-  1. Make sure nothing is unsaved — `git status --porcelain` must be empty; if it isn't, say
-     so in the message below instead of claiming clean.
-  2. `herdr agent prompt {lead-name} "bd-execute[{run-slug}]: task {task-id} MERGED on
-     {branch} — worktree clean, ready to retire"` (or `— worktree DIRTY: <what's there>`).
-  3. Stop babysitting and stop your loop. Do not delete your own worktree, branch, or tab —
-     the lead retires the lane; you'd be sawing off the branch you're sitting on.
-
 ## Never
 
 - Push, open a PR, merge, rebase, or run any `stax` command that mutates the stack.
-  (Pushing to your own branch becomes allowed once the lead hands you the PR — see above.)
+  (Once your PR exists, the lead sends a follow-up order with babysitting instructions that
+  lifts the push rule for `{branch}` only — until that order arrives, no pushes.)
 - Mark `done` with a red test suite.
 - Edit another task's files or branch.
 - Reply to the lead's prompts with questions you can answer from the brief or the codebase.

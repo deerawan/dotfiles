@@ -1,6 +1,6 @@
 ---
 name: bd-execute
-description: Execute one phase of a bd-plan plan file as a herdr crew — a git worktree, herdr tab, and autonomous Claude session per task — producing stax-stacked draft PRs. The lead (this session) dispatches waves, supervises via herdr agent states and status files, and submits the stack; workers report back over the herdr socket. This skill executes, it never plans: it exits plan mode at its dispatch gate rather than entering it, so run it only on a plan that is already approved. Use after a bd-plan plan is approved, when the user wants a phase implemented in parallel. Triggers on "bd-execute", "execute the plan as a crew", "run phase N of the plan", "implement the plan in parallel worktrees/tabs".
+description: Use when a bd-plan plan is already approved and the user wants a phase implemented in parallel — one git worktree, herdr tab, and Claude session per task, producing stax-stacked draft PRs. Never for planning. Triggers on "bd-execute", "execute the plan as a crew", "run phase N of the plan", "implement the plan in parallel worktrees/tabs".
 argument-hint: "[plan file path or topic] [--phase N] [--cap N] [--step] [--yolo] [--checkpoint]"
 disable-model-invocation: true
 ---
@@ -34,7 +34,7 @@ bd-ticket: glob, ask on multiple hits, list 5 most recent if empty).
 | `--cap N` | Max parallel crewmates per wave (default 4) |
 | `--step` | Human-stepped waves: pause after each wave settles and confirm before dispatching the next (recommended for a plan's first crew run) |
 | `--yolo` | Start crewmates with `--dangerously-skip-permissions` instead of the default `--permission-mode auto`. Only when the user explicitly passes it |
-| `--checkpoint` | Write `CHECKPOINT.md` for the in-flight run and stop. Spawns nothing, changes nothing else — use before clearing context (see Checkpoint) |
+| `--checkpoint` | Write `CHECKPOINT.md` for the in-flight run and stop. Spawns nothing, changes nothing else — use before clearing context (see [references/checkpoint-resume.md](references/checkpoint-resume.md)) |
 
 Unrecognized `--` tokens: note and ignore. `--checkpoint` skips Steps 0–8 entirely: resolve
 the run dir, write the checkpoint, report the path.
@@ -51,7 +51,8 @@ needs:
 ├── CHECKPOINT.md             ← ephemeral handoff for a context clear; deleted on resume
 ├── task-<id>.brief.md        ← each crewmate's order
 ├── task-<id>.status          ← each crewmate's ground truth
-└── task-<id>.pr.md           ← each crewmate's PR body
+├── task-<id>.pr.md           ← each crewmate's PR body (short — see Step 7.2)
+└── task-<id>.testing.md      ← full tester report, verbatim; kept OUT of the PR body
 ```
 
 `EXECUTION.md` carries run-wide facts and one line per phase — never a branch table:
@@ -129,7 +130,8 @@ Run and report failures as one batch; each is fatal unless noted:
    ask which one at the dispatch gate. None found → note it; workers write free-form
    Problem / Solution / Testing bodies instead.
 5. Previous run detection: if `<run-dir>` has settled status files, this is a **resume** —
-   see Resume below.
+   read [references/checkpoint-resume.md](references/checkpoint-resume.md) and follow its
+   Resume procedure.
 
 ## Step 2: Branch Map and Waves
 
@@ -244,40 +246,17 @@ Interventions (the only ones):
   agent `gone`) → report STUCK in chat with `herdr agent read <agent-name>` tail. **Never
   kill a crewmate** — the human decides.
 - `done` without commits on the branch (`git log <parent>..<branch>` empty) → treat as STUCK.
-- **PR merged → retire the lane.** Two ways you learn this, and either one starts the same
-  procedure:
+- **PR merged → retire the lane** (procedure: *Retiring a merged lane*, below). Two ways
+  you learn this, and either one starts that procedure:
   - **The crewmate tells you** — it babysits its own PR, so it sees the merge first and
     messages `task <id> MERGED on <branch> — worktree clean|DIRTY`. This is the normal path
     and costs no polling.
   - **You notice on a poll** — `gh pr view <branch> --json state,mergedAt` for tasks with
     PRs, whenever you're already polling a wave. Covers crewmates that died or were closed.
 
-  A crewmate's message is an event, not proof: re-verify with `gh` and `git status` yourself
-  before removing anything. Then, per merged task, in this order:
-  1. Confirm it really merged and nothing is unsaved: state `MERGED`, and
-     `git -C <worktree> status --porcelain` empty. Dirty worktree → **stop and report**;
-     never force-remove someone's uncommitted work.
-  2. Tell the crewmate it's done, then close its tab:
-     `herdr agent prompt <agent-name> "PR merged — stand down; I'm closing this tab."`
-     then `herdr tab close <tab-id>` (ids from `crew.json`).
-  3. `stax worktree remove <branch> --delete-branch` — removes the lane and the local
-     branch. Without `--delete-branch` the branch lingers and later runs may mistake it for
-     live work.
-  4. Re-point any **unspawned** child whose frozen parent was this branch to the parent it
-     collapses to (trunk, or the nearest unmerged ancestor); note the change in the phase
-     file. Children already spawned keep their base — their PRs re-target on GitHub when the
-     base merges; do not rewrite their branches.
-  5. Record it: set the task's row in the phase file to `merged` and drop its entry from
-     `crew.json`.
-  Do this only for **merged** PRs — a closed-unmerged PR keeps its lane until the human says
-  otherwise. Never run `stax sync`'s bulk branch deletion to achieve this; retire lanes one
-  task at a time, so a surprise never takes a branch you still need.
-
   Merges usually land after Step 8, when you are idle and polling nothing — so the crewmate
   report is what keeps retirement working past the end of the run. Stay reachable: keep the
-  lead name claimed while any PR from this run is open, and release it (Step 8.4) only once
-  every task is merged or handed back to the human. If you find yourself in a fresh session
-  with lanes still around, run the same procedure over `crew.json` once.
+  lead name claimed while any PR from this run is open (released in Step 8.4).
 
 ## Step 6: Advance Waves
 
@@ -304,20 +283,35 @@ When no runnable tasks remain in the phase:
    the PR, not stax): `gh pr edit <branch> --body-file <run-dir>/task-<id>.pr.md`. A task
    with no `pr.md` gets its body written by you from its status file and plan task — never
    leave a PR with an empty body.
+
+   **Check each body before posting it** — you are the last gate, and a crewmate that just
+   spent hours in one task tends to over-explain it:
+   ```bash
+   awk '/PULUMI_PREVIEW_START/{exit} {print}' <run-dir>/task-<id>.pr.md | wc -w
+   git diff --shortstat <parent>...<branch>
+   ```
+   Over ~450 words, longer than its own diff, or containing logs / test transcripts /
+   commit narration → trim it yourself (invoke a PR-description skill if one is available)
+   before `gh pr edit`. Keep the template headings and comment markers intact while trimming,
+   and leave the full tester report where it belongs: `task-<id>.testing.md`.
 3. Verify: `stax ll` shows a PR per branch, each PR's base is its parent branch (trunk for
    roots), all drafts, and every PR body carries the repo template's headings — including
    any HTML comment markers CI depends on. Fix any that don't with `gh pr edit --body-file`.
 4. **Hand each PR back to its author to babysit.** Only now — the crewmate's tab is still
    open on its own branch, so it is the cheapest place to fix CI. For each task with a PR:
    ```
-   herdr agent prompt <agent-name> "Your PR is open: <pr-url>. Run /babysit-pr and keep
-   watching it. You may now commit AND PUSH fixes to <branch> — that restriction is lifted
-   for your own branch only. Still never merge, never rebase onto trunk, never touch another
-   branch. Report to <lead-name> when it is green, or if it needs a human decision."
+   herdr agent prompt <agent-name> "Your PR is open: <pr-url>. Run /babysit-pr (or, if that
+   skill isn't in your session, poll gh pr checks and fix failures) and keep watching it.
+   You may now commit AND PUSH fixes to <branch> — lifted for your own branch only. Still
+   never merge, never rebase onto trunk, never touch another branch or re-target the PR
+   base; don't guess on review feedback that changes intent — ask <lead-name>. Report to
+   <lead-name> when it is green. When gh pr view shows MERGED: verify git status
+   --porcelain is empty, message <lead-name> 'bd-execute[<run-slug>]: task <id> MERGED on
+   <branch> — worktree clean, ready to retire' (or '— worktree DIRTY: <what>'), then stop —
+   never delete your own worktree, branch, or tab; the lead retires the lane."
    ```
    Skip a task whose agent is `gone` (report it instead — the human can re-open the lane) or
-   whose PR failed to open. If a skill by that name isn't available in the crewmate's
-   session, tell it to poll `gh pr checks` and fix failures instead.
+   whose PR failed to open.
 
 ## Step 8: Write Back and Report
 
@@ -339,13 +333,13 @@ When no runnable tasks remain in the phase:
    Minor findings: <collected from status files>
    Babysitting: <task-id list> — each crewmate is watching its own PR and will report
    back; it pauses for you on review decisions, and reports the merge when it lands.
-   Tabs left open: <task-id list> — retired automatically as each PR merges (tab closed,
-   lane + branch removed); nothing for you to clean up by hand.
-   Retired this run: <task-id list — merged> (or `none`)
+   Tabs left open: <task-id list> — each lane stays until you approve retiring it, which
+   I'll offer as soon as its PR merges.
+   Retired this run: <task-id list — approved and removed> (or `none`)
    Next: <checkpoint text from the plan, or "phase N+1 ready: /bd-execute <plan> --phase N+1">
    ```
 4. Leave crew tabs and lanes in place — they're the review surface until each PR merges, at
-   which point the Step 5 retirement reclaims them one task at a time. Bulk cleanup is
+   which point *Retiring a merged lane* reclaims them one task at a time. Bulk cleanup is
    offered, never done.
 
    **Keep the lead identity while any PR from this run is open** — that name is the address
@@ -354,18 +348,78 @@ When no runnable tasks remain in the phase:
    `herdr agent rename <run-slug>-lead --clear` and
    `herdr tab rename <own-tab-id> <previous label>`.
 
-## Checkpoint — clearing context mid-run
+## Retiring a merged lane
 
-A bd-execute run survives a context clear better than most work, because the crewmates are
-**separate live sessions**: clearing the lead loses supervision, not progress. Crewmates keep
-working, keep writing their status files, and keep pushing notifications at the lead name —
-which the next lead session inherits by re-claiming that name.
+A crewmate's merge message is an event, not proof. Per merged task:
 
-Almost everything the lead knows is already on disk (phase file = the map, `crew.json` =
-addresses + `spawned_at`, `task-*.status` = progress). The checkpoint covers the rest — the
-judgment that isn't derivable.
+1. **Verify** — `gh pr view <branch> --json state` is `MERGED`, and
+   `git -C <worktree> status --porcelain` is empty.
+2. **Ask before removing anything.** Deleting a worktree and branch is irreversible, so it
+   is the human's call, every time — never automatic. Batch all merged tasks into one
+   `AskUserQuestion` (Retire / Keep, per task or all-at-once), showing exactly what goes:
+   ```
+   Task 1 — search index view · PR merged
+     worktree ~/.stax/worktrees/<repo>/feat-1234-search-index (clean)
+     branch   feat-1234-search-index
+     tab      task-1
+   ```
+   A **dirty worktree is not offered for retirement** — report what's uncommitted and let
+   the human deal with it. `Keep` leaves everything in place; ask again next status.
+3. **On approval**, per approved task, in this order:
+   - `herdr agent prompt <agent-name> "PR merged — stand down; I'm closing this tab."`
+     then `herdr tab close <tab-id>` (ids from `crew.json`).
+   - `stax worktree remove <branch> --delete-branch` — removes the lane and the local
+     branch. Without `--delete-branch` the branch lingers and later runs may mistake it
+     for live work.
+   - Re-point any **unspawned** child whose frozen parent was this branch to the parent it
+     collapses to (trunk, or the nearest unmerged ancestor); note the change in the phase
+     file. Children already spawned keep their base — their PRs re-target on GitHub when
+     the base merges; do not rewrite their branches.
+   - Record it: set the task's row in the phase file to `retired` and drop its entry from
+     `crew.json`.
+4. Tasks the human declined stay `merged` in the phase file, lane intact.
 
-**Triggers — write it when any of these happen:**
+Only **merged** PRs are ever offered — a closed-unmerged PR keeps its lane until the human
+says otherwise. Never run `stax sync`'s bulk branch deletion to achieve this; retire lanes
+one task at a time, so a surprise never takes a branch you still need. If you find yourself
+in a fresh session with lanes still around, run this procedure over `crew.json` once.
+
+## Status report — on demand
+
+Whenever the user says "status" (or asks how the run is going), answer with this table and
+nothing else unless they asked for more. Read it fresh from `gh` + the phase file + status
+files — never from memory.
+
+```markdown
+**Status — <run-slug>, phase <N>** (merge bottom-up)
+
+| Task | PR | State | Review |
+|---|---|---|---|
+| 1 — search index view | [#12260](https://github.com/<owner>/<repo>/pull/12260) | Draft | Review required |
+| 0b — Lambda switch | [#12258](https://github.com/<owner>/<repo>/pull/12258) | Merged | ✅ Approved |
+| 5 — GraphQL contract | [#12259](https://github.com/<owner>/<repo>/pull/12259) | Active | Changes requested |
+| 3 — domain model | — | Not submitted | — |
+```
+
+- **Order:** bottom-up by stack position, so the top row is what merges next — not task-number
+  order.
+- **Task:** `<task no> — <short description>` from the plan's task title.
+- **PR:** always a clickable `[#num](url)`; `—` when nothing is open yet.
+- **State:** `Draft` / `Active` / `Merged` / `Not submitted` — from
+  `gh pr view <branch> --json isDraft,state`.
+- **Review:** `✅ Approved` / `Changes requested` / `Review required` — from `reviewDecision`.
+- Add a line under the table only when there is something to say: blocked tasks with their
+  note, stuck tasks with their state and age.
+
+**Every `Merged` row triggers the retirement question** — run *Retiring a merged lane*
+(above) over the merged rows.
+
+## Checkpoint and resume
+
+Clearing the lead's context loses supervision, not progress — crewmates are separate live
+sessions and keep working. The checkpoint format, its rules, and the full resume procedure
+live in [references/checkpoint-resume.md](references/checkpoint-resume.md). **Read that file
+the moment any of these happen:**
 
 | Trigger | Who fires it |
 |---|---|
@@ -373,58 +427,7 @@ judgment that isn't derivable.
 | `/bd-execute <plan> --checkpoint` | user, from a session that lost the thread — re-read the run dir, write it, stop |
 | Right after answering a blocked crewmate, relaying a deviation, or putting a question to the human | you, automatically |
 | Before any wait longer than a poll cycle (a wave in flight, `--step` pause, babysitting) | you, automatically |
-
-Those last two matter most: an auto-compaction never announces itself, so a checkpoint that
-only gets written when asked is one that's missing exactly when it's needed. Write it as
-supervision events happen and it is always current — the explicit triggers then cost nothing
-but a refresh of the timestamp.
-
-Write `<run-dir>/CHECKPOINT.md`, overwriting the previous one:
-
-```markdown
----
-phase: <N>
-wave: <W> of <total>
-updated: <ISO timestamp>
----
-
-## Where we are
-<one paragraph: which wave is in flight, what settled, what's next>
-
-## Decisions I made
-- task <id> asked <question> → I answered <answer> (from <plan section / file>)
-
-## Deviations in flight
-- task <id> changed <what> → relayed to <siblings>, <unspawned tasks still to fix>
-
-## Open with the human
-- <question relayed, still unanswered> — crewmate <id> is waiting on it
-
-## Next action
-<the single first thing the next lead session should do>
-```
-
-Rules: overwrite, never append (it's a snapshot, not a log); record **why**, not just what;
-delete it on resume once its contents are absorbed — durable facts belong in the phase file,
-not here. Never put branch maps, PR urls, or task states in it — those are derivable, and a
-stale copy competing with the real files is worse than no copy.
-
-## Resume
-
-Read `CHECKPOINT.md` first if it exists (then delete it after absorbing). Beyond it,
-`EXECUTION.md` + the phase file + status files + `crew.json` + `stax status` are the truth;
-trust them over memory. Read `EXECUTION.md` first (index), then only the target phase's
-`phases/phase-<N>.md` — it holds the approved branch map. **Never re-derive branch names or
-parents when a phase file exists**; re-derivation can produce different slugs and orphan the
-existing branches. Then: `done` with commits on the branch = complete
-(never re-spawn). `running` with a live herdr agent = leave it alone; rejoin supervision.
-`running` with agent `gone` = re-offer at the dispatch gate as a re-spawn (same branch if it
-has commits — the lane persists). Un-spawned tasks resume with their frozen branch names.
-**Re-claim the lead identity** (`herdr agent rename <own-pane> <run-slug>-lead`, tab `lead`)
-so crewmate notifications land in the new session; check each crewmate's tab with
-`herdr agent read <agent-name>` for anything it reported while no lead was listening.
-Re-running a fully executed phase → nothing to do; point at the next phase. A phase with no
-row in the `EXECUTION.md` index was never approved — it goes through Steps 2–3 normally.
+| Resuming: `<run-dir>` has settled status files or a `CHECKPOINT.md` | you, at Step 1.5 |
 
 ## If a lower PR changes after review
 
@@ -433,13 +436,16 @@ Not this skill's loop, but the one-liner the user needs: fix on the lower branch
 
 ## Never
 
+Shaping rules (clickable PR links, the PR-body budget, the run-dir layout) live with the
+sections that own them — these are the lines you never cross:
+
 - Edit code, resolve conflicts, merge, rebase, or commit on any task branch.
-- Print a PR as a bare `#12258` — it must always be a clickable URL or `[#12258](url)`.
+- Remove a worktree, delete a branch, or close a tab without the human approving that exact
+  task's retirement — merged is a prerequisite, not permission.
 - Spawn before the dispatch gate, a task whose dependencies aren't `done`, or two
   path-overlapping tasks in one wave.
 - Re-derive branch names or parents when `phases/phase-<N>.md` exists — the frozen map is the
   only source.
-- Put a branch table in `EXECUTION.md`, or load phase files you aren't working on.
 - Keep supervision state only in context — spawn times, decisions, and relayed questions go
   to `crew.json` / `CHECKPOINT.md` as they happen, not at clear-time from memory.
 - Run spawn-crewmate.sh calls in parallel.
@@ -447,10 +453,8 @@ Not this skill's loop, but the one-liner the user needs: fix on the lower branch
 - Execute tasks from a phase the user didn't select.
 - `stax sync` / `stax sweep` unasked (they delete branches in bulk — retire merged lanes
   one task at a time instead).
-- Remove a lane, delete a branch, or close a tab for a PR that is not `MERGED`, or whose
-  worktree has uncommitted changes.
-- Let a crewmate push or open PRs **before** the lead submits the stack (after Step 7.4 hands
-  the PR back, pushing fixes to its own branch is exactly its job).
+- Let a crewmate push or open PRs before the Step 7.4 handoff — after it, pushing fixes to
+  its own branch is exactly its job.
 
 ## Verification
 
@@ -474,7 +478,8 @@ Before reporting done:
 
 - [ ] Every selected task settled (`done`/`blocked`) with a consistent branch state
 - [ ] Stack submitted: PR per done-task, drafts, bases = parents; bodies applied from
-      `task-<id>.pr.md`; each live crewmate handed its PR to babysit
+      `task-<id>.pr.md`, each word-counted and shorter than its diff; each live crewmate
+      handed its PR to babysit
 - [ ] Plan annotated (Branch/PR per task + Revision History); phase file's Report filled and
       the index row's State updated; report includes blocked, stuck, and minor findings —
       not just successes
