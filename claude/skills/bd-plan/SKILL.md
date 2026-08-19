@@ -258,9 +258,8 @@ resolution:
 2. **The directional label is mandatory** on every block.
 3. **Signatures are the contract; code is illustration.** If a sketch and the
    `Consumes / Produces` block disagree, the signatures win.
-4. **One criterion for which tasks get a sketch — the depth gate (Step 0):**
-   Lightweight sketches every task; Standard sketches the non-obvious ones;
-   Deep sketches only the 2–3 non-obvious tasks. Every other task carries
+4. **Which tasks get a sketch is set by the depth gate — the Step 0 table's
+   Shape column is the only criterion.** Every task without one carries
    `Proposed code: none — [reason]`.
 5. **Under `--no-code`, omit the field entirely** — the Consumes/Produces
    signatures and prose then carry the full contract.
@@ -430,19 +429,14 @@ Break a task down further when:
 
 ## Red Flags
 
+Structural failures (placeholders, untraced tasks, missing criteria, oversized
+tasks) are Step 6's job to catch — these are the temptations to self-check for:
+
 - Starting implementation during planning (planning is read-only)
 - Skipping `EnterPlanMode` and relying on the read-only paragraph instead
-- Saving the plan file before the `ExitPlanMode` approval, or snapshotting a
-  `.vN` for a plan the user hasn't adopted
-- Asking "is this plan okay?" alongside `ExitPlanMode` — that's one question,
-  asked once
+- Saving the plan file — or snapshotting a `.vN` — before `ExitPlanMode`
+  approval
 - Treating a request for changes as approval
-- Tasks with no acceptance criteria or no verification step
-- A task untraceable to any truth (scope creep — the most common miss)
-- Placeholders: "TBD", "similar to Task N", "add error handling"
-- Full-file code dumps in Proposed code blocks
-- Re-describing existing code instead of referencing it by path
-- All tasks XL-sized; no checkpoints at risk boundaries
 - Emitting a verdict on your own plan (review is a separate pass)
 
 ## Verification
@@ -455,12 +449,9 @@ Before saving, confirm:
       before that
 - [ ] Depth announced; classification still fits what grounding revealed
 - [ ] Global Constraints extracted verbatim; assumptions surfaced
-- [ ] Truths written before tasks; every task traces to ≥1 truth
-- [ ] Every task: acceptance criteria, test scenarios (or `none — reason`),
-      verification, exact file paths, Consumes/Produces signatures
-- [ ] Each task has a directional sketch (~10–25 lines, interesting part only)
-      or `none — [reason]`, per its depth's sketch policy — field omitted
-      entirely under `--no-code`
+- [ ] Truths written before tasks
+- [ ] Every task follows the Step 4 structure; sketches follow the depth
+      gate (field omitted entirely under `--no-code`)
 - [ ] Checkpoints sit at risk boundaries
 - [ ] Self-check ran; blockers fixed
 - [ ] Saved to `~/.claude/plans/` with a descriptive kebab-case name
