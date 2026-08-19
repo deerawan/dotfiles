@@ -86,6 +86,26 @@ This doesn't apply to code, code comments, or your own replies to me in chat.
 
 Every line costs context on every session. Cut filler, prefer short imperative rules over prose.
 
+## 8. Code Explains Itself
+
+**Write code that needs no comment. Comments are the exception, not the habit.**
+
+Default is no comment. Make the code say it - rename the variable, extract the function, drop the cleverness.
+
+Allowed:
+- **Why**, when non-obvious: a constraint, a business rule, a workaround (link the issue).
+- Public API docs, where the project already does it.
+- Required annotations (`# type:`, `eslint-disable`, `//go:embed`).
+
+Banned:
+- Restating the code (`// increment i`)
+- Section headers (`// --- Helpers ---`)
+- Narrating your edit (`// Added per request`, `// Changed to fix bug`)
+- Commented-out code - delete it, git has it
+- TODOs without an owner or ticket
+
+The test: if a competent reader of that code would already know it, delete the comment.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
