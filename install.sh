@@ -79,6 +79,25 @@ setup_symlinks() {
     mkdir -p "$HOME/.config/herdr/plugins"
     create_symlink "$DOTFILES/herdr/plugins/config" "$HOME/.config/herdr/plugins/config"
 
+    # claude config. settings.json is deliberately not linked: it carries
+    # machine-local state.
+    mkdir -p "$HOME/.claude/skills"
+    create_symlink "$DOTFILES/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+    create_symlink "$DOTFILES/claude/VOICE.md" "$HOME/.claude/VOICE.md"
+    create_symlink "$DOTFILES/claude/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
+
+    # One link per skill, so ~/.claude/skills stays a real directory that can
+    # also hold skills deliberately kept out of this repo. Never links over a
+    # real directory: `ln -s` would nest the link inside it rather than fail.
+    for skill in "$DOTFILES"/claude/skills/*/; do
+        target="$HOME/.claude/skills/$(basename "$skill")"
+        if [ ! -L "$target" ] && [ -e "$target" ]; then
+            action "~${target#$HOME} exists and is not a symlink... Skipping."
+        else
+            create_symlink "${skill%/}" "$target"
+        fi
+    done
+
 }
 
 setup_xcode() {
