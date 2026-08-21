@@ -44,9 +44,11 @@ test scenarios, verification, files, proposed code}
    - the repo's compile/typecheck gate, if it has one
    Evidence, not impressions: any red result means you are not done.
 4. Self-review the full diff: `git diff {parent}...HEAD` — scope creep, YAGNI, leftover debug.
-5. Dispatch a `code-reviewer` subagent on the diff (skip only if unavailable in your
-   session, and say so in your status file). Fix all Critical/Important findings; collect
-   Minor findings for your status file.
+5. Review the diff with `/code-review xhigh` — the built-in review skill at its widest
+   scrutiny, not a `code-reviewer` subagent. It defaults to the current diff; once you have
+   committed, target your branch's diff against `{parent}`. Fix every correctness finding it
+   confirms; collect the cleanup and minor ones for your status file. (Skip only if the skill
+   is unavailable in your session, and say so in your status file.)
 6. **Domain testing** — check your session's available agents and skills for any tester
    whose domain matches what you changed. If one matches, dispatch it against your change;
    if it reports failures, fix and re-run. Save its FULL structured report to
