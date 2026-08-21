@@ -33,6 +33,17 @@ __wt_worktree_path() {
     | awk -v b="refs/heads/$branch" '/^worktree /{p=substr($0,10)} $0=="branch "b{print p; exit}'
 }
 
+# True only inside the tool that owns this shell. Both binaries can be on PATH,
+# and herdr's daemon answers CLI calls, from a terminal neither of them manages —
+# dispatching on that would open a workspace the user is not looking at.
+__wt_in_herdr() {
+  [[ "${HERDR_ENV:-}" == 1 ]] && command -v herdr &>/dev/null
+}
+
+__wt_in_cmux() {
+  [[ -n "${CMUX_WORKSPACE_ID:-}" ]] && command -v cmux &>/dev/null
+}
+
 # Open $branch's worktree as its own herdr workspace and echo "<workspace_id> <root_pane_id>".
 # Binding the workspace to the worktree is what nests it under the repo in the sidebar,
 # so the worktree must already exist before this is called.
@@ -149,8 +160,7 @@ __wt_cmux_setup() {
 }
 
 __wt_herdr_setup() {
-  [[ "${HERDR_ENV:-}" == 1 ]] || return 0
-  command -v herdr &>/dev/null || return 0
+  __wt_in_herdr || return 0
 
   local force=false
   local initial_prompt=""
@@ -210,7 +220,7 @@ wtc() {
   [[ -z "$repo_root" ]] && return
 
   # Always open the branch in its own workspace — never take over the current one.
-  if command -v herdr &>/dev/null && herdr workspace list >/dev/null 2>&1; then
+  if __wt_in_herdr; then
     # Create the worktree here so herdr can bind the workspace to it.
     ( cd "$repo_root" && git fetch origin main && wt switch --create --base origin/main "$branch" ) || return 1
 
@@ -221,7 +231,7 @@ wtc() {
     herdr pane run "$ws_pane" "__wt_install_deps && __wt_herdr_setup" >/dev/null 2>&1
 
     echo "Workspace '$branch' ($ws_id) created."
-  elif command -v cmux &>/dev/null; then
+  elif __wt_in_cmux; then
     # Create a new cmux workspace and send all commands to it
     local ws_uuid
     ws_uuid=$(cmux new-workspace 2>/dev/null | awk '{print $2}')
@@ -280,7 +290,7 @@ wtpr() {
   fi
 
   # Always open the PR in its own workspace — never take over the current one.
-  if command -v herdr &>/dev/null && herdr workspace list >/dev/null 2>&1; then
+  if __wt_in_herdr; then
     # Create the worktree here so herdr can bind the workspace to it.
     ( cd "$repo_root" && git fetch origin "$branch" && wt switch "$branch" ) || return 1
 
@@ -291,7 +301,7 @@ wtpr() {
     herdr pane run "$ws_pane" "__wt_install_deps && __wt_herdr_setup" >/dev/null 2>&1
 
     echo "Workspace '$branch' ($ws_id) created for PR #$pr_number."
-  elif command -v cmux &>/dev/null; then
+  elif __wt_in_cmux; then
     local ws_uuid
     ws_uuid=$(cmux new-workspace 2>/dev/null | awk '{print $2}')
     if [[ -z "$ws_uuid" ]]; then
@@ -339,7 +349,7 @@ wtj() {
   local jira_prompt prompt_arg
 
   # Always open the ticket in its own workspace — never take over the current one.
-  if command -v herdr &>/dev/null && herdr workspace list >/dev/null 2>&1; then
+  if __wt_in_herdr; then
     # Create the worktree here so herdr can bind the workspace to it.
     ( cd "$repo_root" && git fetch origin main && wt switch --create --base origin/main "$branch" ) || return 1
 
@@ -355,7 +365,7 @@ wtj() {
     herdr pane run "$ws_pane" "__wt_install_deps && __wt_herdr_setup --prompt=$prompt_arg" >/dev/null 2>&1
 
     echo "Workspace '$branch' ($ws_id) created for JIRA ticket $jira_key."
-  elif command -v cmux &>/dev/null; then
+  elif __wt_in_cmux; then
     jira_prompt="${jira_prompt_pre}cmux workspace-action --action rename --title \"${jira_key} <short-title>\"${jira_prompt_post}"
 
     local ws_uuid
@@ -403,8 +413,9 @@ wtd() {
     return 1
   fi
 
-  # Capture cmux workspace ID before leaving
-  local ws_id="$CMUX_WORKSPACE_ID"
+  # Capture the workspace this worktree lives in before leaving it
+  local worktree_path ws_id="$CMUX_WORKSPACE_ID" herdr_ws="$HERDR_WORKSPACE_ID"
+  worktree_path=$(git rev-parse --show-toplevel 2>/dev/null)
 
   echo "Removing worktree: $current_branch"
   cd "$main_worktree" || return 1
@@ -413,8 +424,17 @@ wtd() {
   git branch -D "$current_branch" 2>/dev/null
   echo "Back in main worktree: $main_worktree"
 
-  # Close cmux workspace if we were inside one
-  if command -v cmux &>/dev/null && [[ -n "$ws_id" ]]; then
+  # Close the workspace we were inside, but only when it is the one bound to the
+  # worktree just removed — otherwise this closes the workspace of a plain `cd`.
+  if __wt_in_herdr && [[ -n "$herdr_ws" ]]; then
+    local bound_path
+    bound_path=$(herdr workspace get "$herdr_ws" 2>/dev/null \
+      | jq -r '.result.workspace.worktree.checkout_path // empty')
+    if [[ -n "$bound_path" && "$bound_path" == "$worktree_path" ]]; then
+      echo "Closing herdr workspace..."
+      herdr workspace close "$herdr_ws" >/dev/null 2>&1
+    fi
+  elif command -v cmux &>/dev/null && [[ -n "$ws_id" ]]; then
     echo "Closing cmux workspace..."
     cmux close-workspace --workspace "$ws_id" 2>/dev/null
   fi
