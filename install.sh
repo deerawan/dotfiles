@@ -30,12 +30,21 @@ backup() {
 
 
 setup_symlinks() {
+    # Order matters: -L must be tested before -d, since a symlink to a
+    # directory satisfies both.
     create_symlink() {
         local source=$1
         local target=$2
 
         if [ -L "$target" ]; then
             action "~${target#$HOME} already exists... Skipping."
+        elif [ -d "$target" ]; then
+            # ln -s nests the link inside a real directory rather than failing.
+            warn "~${target#$HOME} is a real directory... Skipping."
+        elif [ -e "$target" ]; then
+            action "Backing up ~${target#$HOME} to .bak, then linking"
+            mv "$target" "$target.bak"
+            ln -s "$source" "$target"
         else
             action "Creating symlink for $source"
             ln -s "$source" "$target"
@@ -53,15 +62,14 @@ setup_symlinks() {
     target="$HOME/.config/karabiner.edn"
     create_symlink "$DOTFILES/karabiner/karabiner.edn" "$target"
 
-    # claude settings
+    # claude settings. Linked so enabledPlugins/extraKnownMarketplaces are
+    # versioned; Claude installs any declared-but-missing plugin on next launch.
+    # Claude also writes here (theme, /config toggles), so expect repo churn.
     mkdir -p "$HOME/.claude"
     create_symlink "$DOTFILES/claude/settings.json" "$HOME/.claude/settings.json"
     create_symlink "$DOTFILES/claude/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
     create_symlink "$DOTFILES/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
     create_symlink "$DOTFILES/claude/VOICE.md" "$HOME/.claude/VOICE.md"
-
-    # claude skills folder
-    create_symlink "$DOTFILES/claude/skills" "$HOME/.claude/skills"
 
     # worktrunk (wt) config
     mkdir -p "$HOME/.config/worktrunk"
@@ -79,23 +87,16 @@ setup_symlinks() {
     mkdir -p "$HOME/.config/herdr/plugins"
     create_symlink "$DOTFILES/herdr/plugins/config" "$HOME/.config/herdr/plugins/config"
 
-    # claude config. settings.json is deliberately not linked: it carries
-    # machine-local state.
+    # claude config
     mkdir -p "$HOME/.claude/skills"
     create_symlink "$DOTFILES/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
     create_symlink "$DOTFILES/claude/VOICE.md" "$HOME/.claude/VOICE.md"
     create_symlink "$DOTFILES/claude/statusline-command.sh" "$HOME/.claude/statusline-command.sh"
 
     # One link per skill, so ~/.claude/skills stays a real directory that can
-    # also hold skills deliberately kept out of this repo. Never links over a
-    # real directory: `ln -s` would nest the link inside it rather than fail.
+    # also hold skills deliberately kept out of this repo.
     for skill in "$DOTFILES"/claude/skills/*/; do
-        target="$HOME/.claude/skills/$(basename "$skill")"
-        if [ ! -L "$target" ] && [ -e "$target" ]; then
-            action "~${target#$HOME} exists and is not a symlink... Skipping."
-        else
-            create_symlink "${skill%/}" "$target"
-        fi
+        create_symlink "${skill%/}" "$HOME/.claude/skills/$(basename "$skill")"
     done
 
 }
