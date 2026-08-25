@@ -3,9 +3,33 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "permissions": {
+    "allow": [
+      "Bash(npx @agent-native/core@latest:*)"
+    ],
     "defaultMode": "auto"
   },
+  "model": "opus[1m]",
   "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/archive_plan.py",
+            "timeout": 600
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"/Users/budi/.claude/hooks/gsd-context-monitor.js\""
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
@@ -24,78 +48,6 @@
             "command": "python3 ~/.claude/hooks/file_validator.py"
           }
         ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.claude/hooks/gsd-prompt-guard.js",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.claude/hooks/gsd-workflow-guard.js",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/gsd-validate-commit.sh",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "ExitPlanMode",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/archive_plan.py",
-            "timeout": 600
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.claude/hooks/gsd-context-monitor.js",
-            "timeout": 10
-          }
-        ],
-        "matcher": "Bash|Edit|Write|MultiEdit|Agent|Task"
-      },
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.claude/hooks/gsd-read-injection-scanner.js",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/gsd-phase-boundary.sh",
-            "timeout": 5
-          }
-        ]
       }
     ],
     "SessionStart": [
@@ -103,15 +55,28 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ~/.claude/hooks/gsd-check-update.js"
+            "command": "node \"/Users/budi/.claude/hooks/gsd-check-update.js\""
           }
         ]
       },
       {
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.claude/hooks/gsd-session-state.sh"
+            "command": "bash '/Users/budi/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/skills/learn/scripts/stop-hook.sh"
           }
         ]
       }
@@ -122,33 +87,43 @@
     "command": "bash ~/.claude/statusline-command.sh"
   },
   "enabledPlugins": {
-    "frontend-design@claude-plugins-official": true,
-    "dev-browser@dev-browser-marketplace": true,
-    "backend-development@claude-code-workflows": true,
+    "agent-skills@addy-agent-skills": true,
+    "builder-skills@builder-skills": true,
     "code-review@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
+    "dev-browser@dev-browser-marketplace": true,
+    "frontend-design@claude-plugins-official": true,
+    "humanizer@humanizer": true,
+    "plannotator@plannotator": true,
     "superpowers@claude-plugins-official": true,
-    "obsidian@obsidian-skills": true,
-    "agent-skills@addy-agent-skills": true
+    "typescript-lsp@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
-    "obsidian-skills": {
-      "source": {
-        "source": "github",
-        "repo": "kepano/obsidian-skills"
-      }
-    },
-    "compound-engineering-plugin": {
-      "source": {
-        "source": "github",
-        "repo": "EveryInc/compound-engineering-plugin"
-      }
-    },
     "addy-agent-skills": {
       "source": {
         "source": "github",
         "repo": "addyosmani/agent-skills"
+      }
+    },
+    "builder-skills": {
+      "source": {
+        "source": "github",
+        "repo": "BuilderIO/skills"
+      }
+    },
+    "humanizer": {
+      "source": {
+        "source": "github",
+        "repo": "blader/humanizer"
+      }
+    },
+    "plannotator": {
+      "source": {
+        "source": "github",
+        "repo": "backnotprop/plannotator"
       }
     },
     "superpowers-marketplace": {
@@ -156,13 +131,26 @@
         "source": "github",
         "repo": "obra/superpowers-marketplace"
       }
+    },
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    "dev-browser-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "sawyerhood/dev-browser"
+      }
     }
   },
   "effortLevel": "high",
   "autoUpdatesChannel": "latest",
+  "tui": "fullscreen",
   "autoDreamEnabled": true,
   "skipDangerousModePermissionPrompt": true,
-  "theme": "dark-daltonized",
-  "autoCompactEnabled": false,
+  "skipWorkflowUsageWarning": true,
+  "theme": "dark",
   "skipAutoPermissionPrompt": true
 }
