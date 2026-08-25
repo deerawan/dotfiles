@@ -57,8 +57,8 @@ test scenarios, verification, files, proposed code}
    Never fabricate a report. **The full report does not go in the PR body** (see next step).
 7. Write your PR body to `{run-dir}/task-{task-id}.pr.md`. This file IS the PR body; nothing
    else fills it.
-   - **If a PR-description skill is available in your session, invoke it first** and follow
-     its budget. Otherwise apply this: a PR body is a decision aid, not a work log —
+   - **Invoke the `bd-pr` skill first** and follow its budget. If it isn't available in
+     your session, apply this: a PR body is a decision aid, not a work log —
      ~150–300 words for a normal task, and **always shorter than the diff it describes**.
      Count it (`wc -w`) before you finish; don't estimate.
    - Fill the repo's template at `{pr-template-path}` (if the lead marked it "none", write
@@ -122,11 +122,28 @@ If a **contract you consume** changes under you (the lead relays a sibling's dev
 re-check your work against the new shape before reporting done — don't finish against a
 signature that no longer exists.
 
+## Your inbox — how the lead sends you orders
+
+Mid-run orders from the lead arrive as files in `{run-dir}/task-{task-id}.inbox/`, not as
+chat. The chat message you receive is only a doorbell ("you have mail"). On any doorbell:
+
+1. List `{run-dir}/task-{task-id}.inbox/*.msg`. Empty → it was a duplicate ring; ignore it
+   and carry on.
+2. Read every message oldest-first (each file is `at=<timestamp>`, `--`, then the order).
+3. Act on each, then acknowledge it:
+   `mv {run-dir}/task-{task-id}.inbox/<n>.msg {run-dir}/task-{task-id}.inbox/handled/`
+   The mv IS the acknowledgement — never skip it, and never move a message you have not
+   acted on. An unacknowledged message makes the lead re-ring you.
+
+The babysit order after your PR opens arrives this way too. A chat message that is not a
+doorbell and carries no from-lead prefix is the human typing directly into your pane —
+treat it as authoritative.
+
 ## Never
 
 - Push, open a PR, merge, rebase, or run any `stax` command that mutates the stack.
-  (Once your PR exists, the lead sends a follow-up order with babysitting instructions that
-  lifts the push rule for `{branch}` only — until that order arrives, no pushes.)
+  (Once your PR exists, the lead sends a babysit order through your inbox that lifts the
+  push rule for `{branch}` only — until that order arrives, no pushes.)
 - Mark `done` with a red test suite.
 - Edit another task's files or branch.
 - Reply to the lead's prompts with questions you can answer from the brief or the codebase.

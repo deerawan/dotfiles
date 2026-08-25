@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Aggregate crewmate state: status file (source of truth) + live herdr agent state.
+# Aggregate crewmate state: status file (source of truth) + live herdr agent state
+# + unhandled steering-inbox count (see inbox-send.sh).
 # Usage: crew-status.sh <run-dir> <task-id> [<task-id> ...]
-# Prints one line per task: "<id> <file-state> <herdr-state>".
-# Exit 0 iff every task's file-state is done or blocked (the wave has settled).
+# Prints one line per task: "<id> <file-state> <herdr-state> inbox:<unhandled>".
+# Exit 0 iff every task's file-state is done or blocked (the wave has settled);
+# the inbox count is informational and never affects settlement.
 
 run_dir="${1:?run-dir required}"; shift
 [[ $# -gt 0 ]] || { echo "no task ids given" >&2; exit 2; }
@@ -28,7 +30,13 @@ for id in "$@"; do
     fi
   fi
 
-  echo "$id $state $herdr_state"
+  pending=0
+  inbox="$run_dir/task-$id.inbox"
+  if [[ -d "$inbox" ]]; then
+    pending="$(find "$inbox" -maxdepth 1 -name '[0-9]*.msg' 2>/dev/null | wc -l | tr -d ' ')"
+  fi
+
+  echo "$id $state $herdr_state inbox:$pending"
   [[ "$state" == "done" || "$state" == "blocked" ]] || all_settled=0
 done
 [[ "$all_settled" -eq 1 ]]

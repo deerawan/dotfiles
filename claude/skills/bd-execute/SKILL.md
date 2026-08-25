@@ -49,6 +49,7 @@ needs:
 ├── phases/phase-<N>.md       ← that phase's frozen map + report — read only for that phase
 ├── crew.json                 ← roster (agent names, panes, tabs, worktrees, spawned_at)
 ├── CHECKPOINT.md             ← ephemeral handoff for a context clear; deleted on resume
+├── task-<id>.inbox/          ← lead→crewmate steers: NNN.msg + handled/ (mv = ack)
 ├── task-<id>.brief.md        ← each crewmate's order
 ├── task-<id>.status          ← each crewmate's ground truth
 ├── task-<id>.pr.md           ← each crewmate's PR body (short — see Step 7.2)
@@ -214,23 +215,38 @@ Two channels, and the status file always wins:
   `gh`/`git`) before acting.
 - **Poll:** wait with a Monitor until-loop, every 60s:
   `~/.claude/skills/bd-execute/scripts/crew-status.sh <run-dir> <id...>` — exit 0 = wave
-  settled. Each line is `id file-state herdr-state`.
+  settled. Each line is `id file-state herdr-state inbox:<unhandled>`.
+
+**Steering inbox — every message you send a crewmate goes through it, never inline in a
+herdr prompt.** Content in a prompt is gone if delivery fails; a file is not:
+
+```
+~/.claude/skills/bd-execute/scripts/inbox-send.sh <run-dir> <task-id> <agent-name> "<message>"
+```
+
+writes `<run-dir>/task-<id>.inbox/NNN.msg` durably, then rings a constant doorbell ("you
+have mail"). The crewmate acts on each message and acks it by mv-ing it into `handled/`.
+Because the doorbell carries no content, re-ringing is free — a duplicate is a no-op. When
+a poll shows `inbox:` non-zero while the agent sits idle, re-ring
+(`inbox-send.sh --ring <run-dir> <task-id> <agent-name>`) instead of re-sending; unhandled
+mail on a `gone` agent is a contradiction — report STUCK.
 
 Interventions (the only ones):
 
-- `blocked` status → read the note; if you can answer from the plan/codebase, reply with
-  ONE order: `herdr agent prompt <agent-name> "<answer>. Resume your brief."` (names from
-  `crew.json`) — the crewmate rewrites its own status. If it needs the human, relay verbatim
-  and wait.
+- `blocked` status → read the note; if you can answer from the plan/codebase, send ONE
+  order through the inbox: `inbox-send.sh <run-dir> <id> <agent-name> "<answer>. Resume
+  your brief."` (names from `crew.json`) — the crewmate rewrites its own status. If it
+  needs the human, relay verbatim and wait.
 - **`DEVIATION` report** → a crewmate found something that breaks someone else's
   assumptions, and it is still working. You are the only one who can see the blast radius,
   so triage it the moment it arrives:
   1. **Who else is affected?** Check the phase file for tasks whose brief consumes what
      changed, or whose `Files:` list includes the file that moved.
-  2. **Running siblings** → relay it immediately and specifically:
-     `herdr agent prompt <their-name> "bd-execute[...]: task <id> changed <what> to <new
-     shape>. Re-check your work against it before reporting done."` A sibling coding against
-     a signature that no longer exists is the failure this whole channel exists to prevent.
+  2. **Running siblings** → relay it immediately and specifically, through each sibling's
+     inbox: `inbox-send.sh <run-dir> <their-id> <their-name> "task <id> changed <what> to
+     <new shape>. Re-check your work against it before reporting done."` A sibling coding
+     against a signature that no longer exists is the failure this whole channel exists to
+     prevent.
   3. **Unspawned tasks** → fix the brief before it is written; if the plan task itself is now
      wrong, note the divergence in the phase file so it doesn't get re-derived later.
   4. **Scope re-cut** (work landed in the wrong task, or a defect turned up outside anyone's
@@ -298,9 +314,10 @@ When no runnable tasks remain in the phase:
    roots), all drafts, and every PR body carries the repo template's headings — including
    any HTML comment markers CI depends on. Fix any that don't with `gh pr edit --body-file`.
 4. **Hand each PR back to its author to babysit.** Only now — the crewmate's tab is still
-   open on its own branch, so it is the cheapest place to fix CI. For each task with a PR:
+   open on its own branch, so it is the cheapest place to fix CI. For each task with a PR,
+   send the babysit order through its inbox:
    ```
-   herdr agent prompt <agent-name> "Your PR is open: <pr-url>. Run /babysit-pr (or, if that
+   inbox-send.sh <run-dir> <task-id> <agent-name> "Your PR is open: <pr-url>. Run /babysit-pr (or, if that
    skill isn't in your session, poll gh pr checks and fix failures) and keep watching it.
    You may now commit AND PUSH fixes to <branch> — lifted for your own branch only. Still
    never merge, never rebase onto trunk, never touch another branch or re-target the PR
@@ -366,8 +383,9 @@ A crewmate's merge message is an event, not proof. Per merged task:
    A **dirty worktree is not offered for retirement** — report what's uncommitted and let
    the human deal with it. `Keep` leaves everything in place; ask again next status.
 3. **On approval**, per approved task, in this order:
-   - `herdr agent prompt <agent-name> "PR merged — stand down; I'm closing this tab."`
-     then `herdr tab close <tab-id>` (ids from `crew.json`).
+   - `inbox-send.sh <run-dir> <task-id> <agent-name> "PR merged — stand down; I'm closing
+     this tab."` — a durable record; don't wait for the ack, closing the tab is the
+     enforcement — then `herdr tab close <tab-id>` (ids from `crew.json`).
    - `stax worktree remove <branch> --delete-branch` — removes the lane and the local
      branch. Without `--delete-branch` the branch lingers and later runs may mistake it
      for live work.
@@ -450,6 +468,8 @@ sections that own them — these are the lines you never cross:
   to `crew.json` / `CHECKPOINT.md` as they happen, not at clear-time from memory.
 - Run spawn-crewmate.sh calls in parallel.
 - Kill or close a stuck crewmate's tab; approve a permission prompt on the human's behalf.
+- Send a crewmate message content in a raw herdr prompt — every steer goes through
+  `inbox-send.sh`; the prompt is only the doorbell.
 - Execute tasks from a phase the user didn't select.
 - `stax sync` / `stax sweep` unasked (they delete branches in bulk — retire merged lanes
   one task at a time instead).
