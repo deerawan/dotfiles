@@ -60,5 +60,9 @@ has commits — the lane persists). Un-spawned tasks resume with their frozen br
 **Re-claim the lead identity** (`herdr agent rename <own-pane> <run-slug>-lead`, tab `lead`)
 so crewmate notifications land in the new session; check each crewmate's tab with
 `herdr agent read <agent-name>` for anything it reported while no lead was listening.
+**Re-entering Step 7 will not touch a PR that already has a body.** Step 7.2 posts
+`task-<id>.pr.md` only into an empty body, so PRs opened on an earlier pass keep what they
+have now — including screenshots and edits a human added while you were gone. `pr.md` is a
+one-shot handoff, not a copy to re-apply; past first post the PR is the source of truth.
 Re-running a fully executed phase → nothing to do; point at the next phase. A phase with no
 row in the `EXECUTION.md` index was never approved — it goes through Steps 2–3 normally.

@@ -2,7 +2,6 @@
 name: bd-execute
 description: Use when a bd-plan plan is already approved and the user wants a phase implemented in parallel — one git worktree, herdr tab, and Claude session per task, producing stax-stacked draft PRs. Never for planning. Triggers on "bd-execute", "execute the plan as a crew", "run phase N of the plan", "implement the plan in parallel worktrees/tabs".
 argument-hint: "[plan file path or topic] [--phase N] [--cap N] [--step] [--yolo] [--checkpoint]"
-disable-model-invocation: true
 ---
 
 # bd-execute — crew executor for bd-plan phases
@@ -49,10 +48,10 @@ needs:
 ├── phases/phase-<N>.md       ← that phase's frozen map + report — read only for that phase
 ├── crew.json                 ← roster (agent names, panes, tabs, worktrees, spawned_at)
 ├── CHECKPOINT.md             ← ephemeral handoff for a context clear; deleted on resume
-├── task-<id>.inbox/          ← lead→crewmate steers: NNN.msg + handled/ (mv = ack)
 ├── task-<id>.brief.md        ← each crewmate's order
+├── task-<id>.inbox/          ← lead→crewmate steers: NNN.msg + handled/ (mv = ack)
 ├── task-<id>.status          ← each crewmate's ground truth
-├── task-<id>.pr.md           ← each crewmate's PR body (short — see Step 7.2)
+├── task-<id>.pr.md           ← each crewmate's PR body; one-shot, dead once posted (Step 7.2)
 └── task-<id>.testing.md      ← full tester report, verbatim; kept OUT of the PR body
 ```
 
@@ -292,13 +291,23 @@ When no runnable tasks remain in the phase:
 1. From each leaf branch of the phase's stack (in the main worktree):
    `stax checkout <leaf> && stax stack submit --draft --no-prompt --yes --no-template`.
    This pushes every branch and opens/updates linked draft PRs bottom-up. `--no-template` is
-   deliberate: each crewmate already filled the repo's template into
-   `<run-dir>/task-<id>.pr.md`, and step 2 applies that as the body — so stax pre-filling one
-   would only be overwritten.
+   deliberate and load-bearing: step 2 posts a body only into an empty one, so a stub
+   pre-filled here would read as a body and make step 2 skip the task — stranding the empty
+   template on the PR instead of the crewmate's `<run-dir>/task-<id>.pr.md`.
 2. Apply the crewmates' bodies **for every task** (this is what puts the template shape on
-   the PR, not stax): `gh pr edit <branch> --body-file <run-dir>/task-<id>.pr.md`. A task
-   with no `pr.md` gets its body written by you from its status file and plan task — never
-   leave a PR with an empty body.
+   the PR, not stax). **`pr.md` is a one-shot handoff: post it only into an empty body.**
+   Once a PR has a body, the PR is the source of truth and `pr.md` is a stale copy — a
+   human may have added screenshots or edited it since. Check the length, never the body,
+   so the text stays out of your context:
+   ```bash
+   gh pr view <branch> --json body -q '.body | length'   # 0 covers null and empty
+   ```
+   - `0` → `gh pr edit <branch> --body-file <run-dir>/task-<id>.pr.md`. Disk to GitHub;
+     nothing passes through you. A task with no `pr.md` gets its body written by you from
+     its status file and plan task — never leave a PR with an empty body.
+   - non-zero → **leave it alone.** Already posted on an earlier pass or edited by hand.
+     Re-applying `pr.md` is what silently destroys a human's screenshots. If it genuinely
+     needs changing, invoke `bd-pr`, which fetches the live body and splices.
 
    **Check each body before posting it** — you are the last gate, and a crewmate that just
    spent hours in one task tends to over-explain it:
@@ -307,12 +316,13 @@ When no runnable tasks remain in the phase:
    git diff --shortstat <parent>...<branch>
    ```
    Over ~450 words, longer than its own diff, or containing logs / test transcripts /
-   commit narration → trim it yourself (invoke a PR-description skill if one is available)
-   before `gh pr edit`. Keep the template headings and comment markers intact while trimming,
-   and leave the full tester report where it belongs: `task-<id>.testing.md`.
+   commit narration → trim it yourself (invoke `bd-pr`) before `gh pr edit`. Keep the
+   template headings and comment markers intact while trimming, and leave the full tester
+   report where it belongs: `task-<id>.testing.md`.
 3. Verify: `stax ll` shows a PR per branch, each PR's base is its parent branch (trunk for
    roots), all drafts, and every PR body carries the repo template's headings — including
-   any HTML comment markers CI depends on. Fix any that don't with `gh pr edit --body-file`.
+   any HTML comment markers CI depends on. Fix any that don't with `bd-pr`, working from the
+   body fetched off the PR — never by re-applying `pr.md`, which would revert hand edits.
 4. **Hand each PR back to its author to babysit.** Only now — the crewmate's tab is still
    open on its own branch, so it is the cheapest place to fix CI. For each task with a PR,
    send the babysit order through its inbox:
@@ -458,6 +468,8 @@ Shaping rules (clickable PR links, the PR-body budget, the run-dir layout) live 
 sections that own them — these are the lines you never cross:
 
 - Edit code, resolve conflicts, merge, rebase, or commit on any task branch.
+- Send a crewmate message content in a raw herdr prompt — every steer goes through
+  `inbox-send.sh`; the prompt is only the doorbell.
 - Remove a worktree, delete a branch, or close a tab without the human approving that exact
   task's retirement — merged is a prerequisite, not permission.
 - Spawn before the dispatch gate, a task whose dependencies aren't `done`, or two
@@ -468,8 +480,6 @@ sections that own them — these are the lines you never cross:
   to `crew.json` / `CHECKPOINT.md` as they happen, not at clear-time from memory.
 - Run spawn-crewmate.sh calls in parallel.
 - Kill or close a stuck crewmate's tab; approve a permission prompt on the human's behalf.
-- Send a crewmate message content in a raw herdr prompt — every steer goes through
-  `inbox-send.sh`; the prompt is only the doorbell.
 - Execute tasks from a phase the user didn't select.
 - `stax sync` / `stax sweep` unasked (they delete branches in bulk — retire merged lanes
   one task at a time instead).

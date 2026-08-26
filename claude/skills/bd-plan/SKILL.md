@@ -2,7 +2,6 @@
 name: bd-plan
 description: Create a grounded, depth-gated implementation plan with dependency-ordered tasks, derived acceptance truths, and a proposed-code sketch under each task.
 argument-hint: "[feature description, spec/ticket ref, or existing plan path] [--no-code]"
-disable-model-invocation: true
 ---
 
 # bd-plan
@@ -30,7 +29,7 @@ never re-described.
 ## Input
 
 Accept a feature description, ticket key, spec path, or an existing plan path
-(see Re-runs in Step 7) — plus any upstream artifacts: a ticket carrying
+(see Re-runs in Step 8) — plus any upstream artifacts: a ticket carrying
 acceptance criteria, technical documentation (design doc, ADR), a design file
 (Figma, mockup, image). Artifacts are sources of truth: the plan traces to
 them and links them — it never re-describes them.
@@ -62,7 +61,7 @@ refuses edits, so a plan run cannot quietly become an implementation run.
   enforcement, and continue — a declined prompt is not a reason to refuse the
   work.
 - **If plan mode is already active, do not call it again.** Note it and move on.
-- Nothing is written to disk until Step 7, after the approval gate. Everything
+- Nothing is written to disk until Step 8, after the approval gate. Everything
   between here and there lives in the conversation.
 
 Then classify the work, from signals — do not ask unless genuinely ambiguous:
@@ -95,7 +94,7 @@ Before writing anything, operate read-only in the repo:
 1. **Read every provided artifact** — each owns a different slice:
    - **Ticket**: acceptance criteria and scope boundaries. Each AC must
      resurface in the acceptance surface (Step 2) and the coverage matrix
-     (Step 6).
+     (Step 7).
    - **Technical documentation**: decisions already made — the plan follows
      them and references them by link; it re-litigates nothing. Where the doc
      contradicts the code as found, that goes to the question round.
@@ -172,7 +171,60 @@ T3. A failed export shows an error state, not a silent no-op
 Reframe vague goals as measurable criteria before deriving truths:
 "make it faster" → "list renders < 500ms at 1k rows".
 
-## Step 3: Dependency Graph and Slicing
+## Step 3: Behaviour Scenarios
+
+One set of scenarios for the **whole story**, in the user's language, written
+before tasks exist. Tasks below this will be backend slices, stubs, and
+contracts whose acceptance criteria are technical — that is correct and expected.
+The scenarios are how the story is judged; task criteria are how each slice is.
+
+**First, the gate: does this story have a user POV?** Can someone outside the
+team tell it shipped, by using the product?
+
+- **Yes → scenarios are required.** Anything a person interacts with, sees, is
+  notified by, or downloads.
+- **No → write one line and move on:**
+  `Behaviour scenarios: none — <reason>; the goal is system-observable (T#).`
+  Dependency upgrades, refactors, infra, internal tooling with no product-visible
+  change. Never invent a user to satisfy the section.
+- **Mixed** — a technical story with one user-visible sliver — gets scenarios for
+  the sliver only.
+
+**Given / When / Then, and nothing else:**
+
+- **Given** — the state of the world in user terms: a role, data that already
+  exists, the screen they are on. Never a mock, a stub, or a function call.
+- **When** — one action the user takes.
+- **Then** — what they can observe: a screen, a downloaded file, an email. Not a
+  database row, not a return value.
+
+```text
+S1 (T2) — Export respects the active filter
+  Given I am on the orders list filtered to "Unpaid"
+  When I export the list to CSV
+  Then the file contains only unpaid orders, with the columns I can see
+  Demonstrable after: Task 4
+```
+
+1. **Scenarios span tasks.** One scenario usually needs the schema task, the API
+   task, and the UI task together, so `Demonstrable after` stays `—` until Step 6
+   fills it from the finished phases. That line is the plan's demo schedule and
+   its Step 7 coverage check.
+2. **Cover the story's journeys**, not each truth three times: the main path, the
+   edge a real user will hit, and any failure the user must be told about.
+3. **The ticket's own scenarios win.** If the story already states Gherkin or
+   user-facing ACs, restate those — normalized, never a parallel invented set.
+4. **User words, not system words.** "Then the request returns 422" is a system
+   check; the user's version is "Then I see which fields are invalid". Where the
+   API *is* the product (public endpoint, webhook), its consumer is the user.
+5. **No implementation nouns** — no table, component, function, or hook names, no
+   HTTP verbs, no selectors or fixtures.
+6. **Truths are the checklist; scenarios are the walkthrough.** If a scenario
+   says nothing its truth didn't, cut it — that truth has one obvious path.
+7. **Depth-scaled:** Lightweight keeps them inline under the truths, main path
+   only unless a failure is user-facing. Standard and Deep get the plan section.
+
+## Step 4: Dependency Graph and Slicing
 
 Map what depends on what, bottom-up. Then slice **vertically**:
 
@@ -186,7 +238,7 @@ Horizontal layers are justified only for a shared foundation (auth before
 protected features, a contract both sides consume) — in that case the contract
 is its own early task.
 
-**Record each task's `Files:` list** (provisional here; Step 4 formalizes it).
+**Record each task's `Files:` list** (provisional here; Step 5 formalizes it).
 Tasks with disjoint file sets can run in parallel (waves); a file appearing in
 two tasks makes the later task depend on the earlier. This is mechanical as a
 starting point — disjoint files are necessary, not sufficient: migrations and
@@ -196,7 +248,7 @@ shared-state changes stay sequential regardless.
 `path/to/file.ts` and stop. If a section of the plan re-explains code that
 isn't being modified, delete the section.
 
-## Step 4: Write Tasks
+## Step 5: Write Tasks
 
 Each task follows this structure:
 
@@ -271,7 +323,7 @@ error handling" are plan failures, not shortcuts.
 If a task introduces a directory Step 1 never grounded (a new migration dir, a
 shared package), ground it before writing the task.
 
-## Step 5: Order, Phases, and Checkpoints
+## Step 6: Order, Phases, and Checkpoints
 
 Arrange tasks so that:
 
@@ -280,7 +332,7 @@ Arrange tasks so that:
 3. Each task leaves the system in a working state
 
 **Group tasks into phases — depth-scaled.** Lightweight plans keep a flat task
-list. At Standard and Deep, each phase is one dependency wave from Step 3,
+list. At Standard and Deep, each phase is one dependency wave from Step 4,
 named for what it delivers. Phases render the wave analysis: tasks inside a
 phase with disjoint `Files:` lists are explicitly parallel. Name phases by
 what they deliver, not by layer (no "Backend phase" / "Frontend phase" —
@@ -306,7 +358,19 @@ phase end — never every N tasks:
 ~50% of an executor's context (many files, heavy discovery, complex domains),
 split into sequential plan files, each independently executable.
 
-## Step 6: Structural Self-Check
+**Then reconcile the scenarios** (Step 3) against the decomposition you just
+built — this is the pass where a thin user story shows its gaps:
+
+- Fill each scenario's `Demonstrable after` with the task or phase that makes it
+  true. A scenario nothing makes demonstrable is a missing task.
+- Add any scenario the decomposition revealed — an empty state, a permission
+  case, a partial failure the layering exposed — and mark it
+  `(revealed during planning)`.
+- Raise the revealed ones with the user in one batch. A behaviour that only
+  appeared once tasks existed usually means the story is missing a piece, and
+  that is a product decision, not yours to settle.
+
+## Step 7: Structural Self-Check
 
 Mechanical checks only — this step never judges plan quality (quality
 judgment belongs to a separate review pass). Run in order:
@@ -317,21 +381,25 @@ judgment belongs to a separate review pass). Run in order:
    scope creep — cut it, or add the missing
    truth and list that addition in the plan's Risks section as *retrofitted*,
    so a downstream reviewer can tell derived truths from post-hoc ones.
-2. **Placeholder scan** — these are plan failures; fix inline:
+2. **Scenario coverage**: the story either has scenarios or the one-line
+   justification. Every user-visible ticket AC appears in ≥1 scenario; every
+   scenario's `Demonstrable after` names a task or phase that exists; no scenario
+   names a file, function, or component.
+3. **Placeholder scan** — these are plan failures; fix inline:
    "TBD", "TODO", "implement later", "add appropriate error handling",
    "handle edge cases", "write tests for the above", "similar to Task N".
-3. **Signature diff**: names and types in `Consumes / Produces` match across
+4. **Signature diff**: names and types in `Consumes / Produces` match across
    tasks (a `clearLayers()` in Task 3 that Task 7 calls `clearFullLayers()` is
    a bug).
-4. **Sizing**: no task is XL or touches more than ~8 files.
+5. **Sizing**: no task is XL or touches more than ~8 files.
 
 Report findings with severity — **blocker** (fix before saving) vs **warning**
 (note in the plan's Risks section) — then fix blockers inline and move on.
 Do not emit a verdict on your own plan.
 
-## Step 7: Approve, Save, Hand Off
+## Step 8: Approve, Save, Hand Off
 
-### 7a. Approval gate — `ExitPlanMode`
+### 8a. Approval gate — `ExitPlanMode`
 
 Present the finished plan and call `ExitPlanMode`. **This is the gate: nothing
 is written to disk before the user approves.** Do not ask "is this plan okay?"
@@ -343,7 +411,7 @@ thing, not a summary of it. Where the harness names that file, write there.
 
 Two outcomes:
 
-- **Approved** → continue to 7b and save to `~/.claude/plans/`.
+- **Approved** → continue to 8b and save to `~/.claude/plans/`.
 - **Rejected, or the user asks for changes** → stay in plan mode, revise, and
   gate again. Never save a rejected plan; never treat "one more thing" as
   approval.
@@ -351,7 +419,7 @@ Two outcomes:
 If plan mode was never entered (the user declined in Step 0), there is nothing
 to exit — show the plan, get an explicit go-ahead, then save.
 
-### 7b. Save
+### 8b. Save
 
 Save to `~/.claude/plans/<kebab-topic>.md` — user-level (reachable from every
 worktree), descriptive kebab-case name, never a random generated name. This is
@@ -372,8 +440,9 @@ recording a version that was never adopted.
 ## Global Constraints  <!-- verbatim from Step 1; every task inherits -->
 ## Assumptions         <!-- from Step 1, if any -->
 ## Acceptance Surface  <!-- truths T1…Tn, key links -->
+## Behaviour Scenarios <!-- S1…Sn, or the one-line "none — technical story" -->
 ## Architecture Decisions  <!-- decision + rationale, delta only -->
-## Tasks               <!-- Step 4 structure, checkpoints interleaved -->
+## Tasks               <!-- Step 5 structure, checkpoints interleaved -->
 ## Risks               <!-- table: Risk | Impact (High/Med/Low) | Mitigation.
                             Rows include self-check warnings and retrofitted
                             truths; a risk with no mitigation is either
@@ -430,7 +499,7 @@ Break a task down further when:
 ## Red Flags
 
 Structural failures (placeholders, untraced tasks, missing criteria, oversized
-tasks) are Step 6's job to catch — these are the temptations to self-check for:
+tasks) are Step 7's job to catch — these are the temptations to self-check for:
 
 - Starting implementation during planning (planning is read-only)
 - Skipping `EnterPlanMode` and relying on the read-only paragraph instead
@@ -450,7 +519,9 @@ Before saving, confirm:
 - [ ] Depth announced; classification still fits what grounding revealed
 - [ ] Global Constraints extracted verbatim; assumptions surfaced
 - [ ] Truths written before tasks
-- [ ] Every task follows the Step 4 structure; sketches follow the depth
+- [ ] Behaviour scenarios written for any story with a user POV — or their
+      absence justified in one line
+- [ ] Every task follows the Step 5 structure; sketches follow the depth
       gate (field omitted entirely under `--no-code`)
 - [ ] Checkpoints sit at risk boundaries
 - [ ] Self-check ran; blockers fixed

@@ -106,6 +106,25 @@ Banned:
 
 The test: if a competent reader of that code would already know it, delete the comment.
 
+## 9. Unit Tests Stub Every Dependency
+
+**One unit runs for real. Everything it imports is a test double.**
+
+Every import crossing the unit's module boundary gets stubbed - collaborators, repositories, policies, clients, clocks, value-object factories alike. No exemption for "pure" or "simple". Build inputs from literals (`{ id: 'setting-1' }`), not from real factories (`Setting.create(...)`).
+
+Banned: the mock that calls through.
+
+```ts
+canDoThing: jest.fn(actual.canDoThing)  // a spy, not a stub
+canDoThing: jest.fn()                   // correct - set the return value per test
+```
+
+It buys coupling and sells isolation: the test goes red when the collaborator changes, and it silently re-runs logic that already has its own test. Every stubbed export needs an explicit return value in each test that reaches it.
+
+Real collaborators belong in integration tests. Get there deliberately, not by leaving a mock unstubbed.
+
+The test: change the collaborator's logic - if this test goes red, it was never a unit test.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
