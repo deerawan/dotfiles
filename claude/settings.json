@@ -12,20 +12,10 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "ExitPlanMode",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ~/.claude/hooks/archive_plan.py",
-            "timeout": 600
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"/Users/budi/.claude/hooks/gsd-context-monitor.js\""
+            "command": "node ~/.claude/hooks/gsd-context-monitor.js"
           }
         ]
       }
@@ -55,7 +45,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"/Users/budi/.claude/hooks/gsd-check-update.js\""
+            "command": "node ~/.claude/hooks/gsd-check-update.js"
           }
         ]
       },
@@ -64,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash '/Users/budi/.claude/hooks/herdr-agent-state.sh' session",
+            "command": "bash ~/.claude/hooks/herdr-agent-state.sh session",
             "timeout": 10
           }
         ]

@@ -99,6 +99,13 @@ setup_symlinks() {
         create_symlink "${skill%/}" "$HOME/.claude/skills/$(basename "$skill")"
     done
 
+    # One link per hook, so ~/.claude/hooks stays a real directory: herdr
+    # installs its own integration script there and overwrites it on update.
+    mkdir -p "$HOME/.claude/hooks"
+    for hook in "$DOTFILES"/claude/hooks/*; do
+        create_symlink "$hook" "$HOME/.claude/hooks/$(basename "$hook")"
+    done
+
 }
 
 setup_xcode() {
