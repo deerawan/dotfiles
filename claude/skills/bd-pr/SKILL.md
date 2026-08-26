@@ -1,9 +1,9 @@
 ---
-name: pr-body
-description: Writes and trims pull request descriptions against a word budget so the body stays a decision aid rather than a work log. Use whenever a PR description is being composed, updated, or trimmed — including from inside /pr, /babysit-pr, `gh pr create` and `gh pr edit` — and when the user says a PR is too long, verbose, bloated, or hard to read, asks to shorten a PR description, or runs /pr-body. Invoke BEFORE writing any PR body text, not after.
+name: bd-pr
+description: Writes and trims pull request descriptions against a word budget so the body stays a decision aid rather than a work log. Use whenever a PR description is being composed, updated, or trimmed — including from inside /pr, /babysit-pr, `gh pr create` and `gh pr edit` — and when the user says a PR is too long, verbose, bloated, or hard to read, asks to shorten a PR description, or runs /bd-pr. Invoke BEFORE writing any PR body text, not after.
 ---
 
-# PR Body
+# bd-pr
 
 A PR description is a decision aid, not a work log. Its only job is to help a reviewer decide, quickly and correctly, whether this should merge. Every sentence that doesn't move that decision is a tax on it.
 
