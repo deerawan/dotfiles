@@ -414,7 +414,8 @@ wtd() {
   fi
 
   # Capture the workspace this worktree lives in before leaving it
-  local worktree_path ws_id="$CMUX_WORKSPACE_ID" herdr_ws="$HERDR_WORKSPACE_ID"
+  local worktree_path ws_id="$CMUX_WORKSPACE_ID"
+  local herdr_ws="$HERDR_WORKSPACE_ID" herdr_pane="$HERDR_PANE_ID"
   worktree_path=$(git rev-parse --show-toplevel 2>/dev/null)
 
   echo "Removing worktree: $current_branch"
@@ -426,6 +427,9 @@ wtd() {
 
   # Close the workspace we were inside, but only when it is the one bound to the
   # worktree just removed — otherwise this closes the workspace of a plain `cd`.
+  # Failing that, close nothing but this pane: herdr drops the tab, and then the
+  # workspace, on its own once they are empty, so sibling panes are never
+  # collateral damage.
   if __wt_in_herdr && [[ -n "$herdr_ws" ]]; then
     local bound_path
     bound_path=$(herdr workspace get "$herdr_ws" 2>/dev/null \
@@ -433,6 +437,9 @@ wtd() {
     if [[ -n "$bound_path" && "$bound_path" == "$worktree_path" ]]; then
       echo "Closing herdr workspace..."
       herdr workspace close "$herdr_ws" >/dev/null 2>&1
+    elif [[ -n "$herdr_pane" ]]; then
+      echo "Closing herdr pane..."
+      herdr pane close "$herdr_pane" >/dev/null 2>&1
     fi
   elif command -v cmux &>/dev/null && [[ -n "$ws_id" ]]; then
     echo "Closing cmux workspace..."
