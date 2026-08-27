@@ -13,7 +13,7 @@ Reviewers get through at most 20-28% of a page and 79% scan rather than read, so
 
 The goal is that the reviewer understands the change. The budget below is a means to that, not the point. A short description packed with jargon fails just as hard as a long one, and cutting words without making the meaning clearer is wasted effort.
 
-This applies to **Problem, Solution, the must-not-miss section, Acceptance Criteria and Testing**. Demo and Resources are images and links, so they're exempt.
+This applies to **Problem, Solution, Acceptance Criteria and Testing**. Demo and Resources are images and links, so they're exempt.
 
 Write those sections for a competent engineer who has none of your context: they weren't in the ticket, haven't read the design doc, and don't know what you tried first.
 
@@ -44,7 +44,7 @@ git diff --shortstat "$(gh pr view --json baseRefName -q .baseRefName)"...HEAD
 | --- | --- |
 | Trivial: config, copy, a version bump, a constant | under 40 words |
 | Normal: one self-contained change | 150-300 words |
-| Risky: auth, migrations, grants, money, deletion, RLS | up to 450, plus one section naming the risk and blast radius |
+| Risky: auth, migrations, grants, money, deletion, RLS | up to 450; name the risk and blast radius in Solution |
 | Bigger than that | Cut it, or split the PR |
 
 Two hard rules:
@@ -70,10 +70,9 @@ Use it as the exact base for the body: keep its headings and their order, and ma
 
 1. **Problem**, two sentences. Why this change exists.
 2. **Solution**, three to five sentences. What changed and why, not how. The reviewer can read how.
-3. **The one thing they must not miss**, its own `###` heading, right after Solution, three sentences. A behavior change, an RLS bypass, a deliberate deviation from convention, a blast radius. Say it exactly once. Repeating it in three places is a way of hiding it, not emphasising it.
-4. **Acceptance Criteria** and **Testing**, one line per checkbox. Never a paragraph inside a checkbox.
-5. **Resources**: ticket, design doc, dependent PRs. Link the published design doc, not a local `*.md` path.
-6. **Demo/Screenshots** (use whatever heading the repo's template uses), in the body, not a comment. See below. If there's no user-visible change, one line saying so.
+3. **Acceptance Criteria** and **Testing**, one line per checkbox. Never a paragraph inside a checkbox.
+4. **Resources**: ticket, design doc, dependent PRs. Link the published design doc, not a local `*.md` path.
+5. **Demo/Screenshots** (use whatever heading the repo's template uses), in the body, not a comment. See below. If there's no user-visible change, one line saying so.
 
 Reuse the commit message. A well-written commit already leads with the decision and explains the why, so the Problem and Solution sections are usually that message lightly edited.
 
@@ -150,7 +149,7 @@ If a section has grown past its budget since the last edit, trim it in the same 
 
 ## Voice
 
-PR descriptions are prose written on the user's behalf, so follow `~/.claude/VOICE.md`. In particular: contractions, short declarative sentences, conclusion first, no em dashes, no bold for emphasis, emoji sparingly (a single 🚨 on the must-not-miss heading is good use).
+PR descriptions are prose written on the user's behalf, so follow `~/.claude/VOICE.md`. In particular: contractions, short declarative sentences, conclusion first, no em dashes, no bold for emphasis, emoji sparingly.
 
 ## What not to do
 
