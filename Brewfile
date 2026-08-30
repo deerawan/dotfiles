@@ -43,6 +43,7 @@ cask "cleanshot"
 cask "tradingview"
 
 # packages
+brew "bun"
 brew "cloc" # lines of code counter
 brew "git-delta" # a better git diff
 brew "entr" # file watcher / command runner

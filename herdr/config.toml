@@ -345,3 +345,16 @@ type = "plugin_action"
 command = "jhochenbaum.hunkdiff.send-review"
 description = "hunk: send review to agent"
 # END jhochenbaum.hunkdiff
+
+# Terminal annotations
+[[keys.command]]
+key = "prefix+n"
+type = "plugin_action"
+command = "annotate.capture"
+description = "annotate text"
+
+[[keys.command]]
+key = "prefix+shift+n"
+type = "plugin_action"
+command = "annotate.copy-context"
+description = "copy annotations as context"
