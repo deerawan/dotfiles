@@ -65,6 +65,7 @@ brew "shellcheck" # diagnostics for shell scripts
 brew "tmux" # terminal multiplexer
 brew "herdr" # agent multiplexer that lives in your terminal
 brew "tree" # pretty-print directory contents
+brew "tuicr" # code review TUI with vim keybindings
 brew "vim" # Vim (latest)
 brew "wdiff" # word differences in text files
 brew "wget" # internet file retriever
