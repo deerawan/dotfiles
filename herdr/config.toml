@@ -358,3 +358,10 @@ key = "prefix+shift+n"
 type = "plugin_action"
 command = "annotate.copy-context"
 description = "copy annotations as context"
+
+# Command palette
+[[keys.command]]
+key = "prefix+p"
+type = "shell"
+command = "herdr plugin pane open --plugin palette --entrypoint palette"
+description = "Command palette"

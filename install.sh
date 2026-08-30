@@ -173,6 +173,7 @@ setup_homebrew() {
     echo -e
     action "Installing herdr plugins"
     herdr plugin install plannotator/herdr-annotate --yes
+    herdr plugin install fabiogaliano/herdr-command-palette --yes
 }
 
 setup_shell() {
