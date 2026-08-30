@@ -2,3 +2,8 @@
 # PR's real base ref, so stacked PRs diff against the layer below instead of main.
 [hunk]
 bin = "/Users/budi/dotfiles/bin/hunk-stackbase"
+
+# Auto-reload the open review when the diff input changes; without it the pane
+# holds whatever it rendered at launch until the review action runs again.
+[review]
+watch = true
