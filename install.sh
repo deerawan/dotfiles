@@ -168,6 +168,11 @@ setup_homebrew() {
     echo -e
     action "Installing fzf"
     "$(brew --prefix)"/opt/fzf/install --key-bindings --completion --no-update-rc --no-bash --no-fish
+
+    # install herdr plugins
+    echo -e
+    action "Installing herdr plugins"
+    herdr plugin install plannotator/herdr-annotate --yes
 }
 
 setup_shell() {
