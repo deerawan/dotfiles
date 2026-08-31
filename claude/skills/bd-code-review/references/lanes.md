@@ -77,10 +77,17 @@ Skip when: the diff is docs-only or config-only.
 A finding in this lane IS one of: (a) a changed public behaviour with no test that would
 fail if it regressed — a new exported function without a behavioral test, a bugfix
 without a regression test; (b) a tautological test — one that cannot fail for a real
-reason because it restates the implementation instead of pinning behaviour: asserting a
-file contains the source strings it already contains, asserting a mock returns exactly
-what it was stubbed to return, or re-deriving the expected value with the code under
-test. Name the missing test case or the tautology, not just "needs tests".
+reason because it asserts against the implementation instead of exercising an interface
+and pinning observable behaviour (output, state, side effects, failure modes). Examples:
+asserting source text contains or omits particular strings, tokens, names, or AST shapes
+(text can be dead or renamed by a safe refactor); asserting a mock returns exactly what
+it was stubbed to return; or re-deriving the expected value with the code under test. For
+a declarative artifact (workflow YAML, JSON/policy, `.gitignore`, generated config),
+invoke the real consumer or parse it into a semantic model and assert meaning — a raw
+substring/regex over the file is the same anti-pattern. Reading a file is legitimate only
+when the file itself is the contract (generated output, serialized protocol, persisted
+state, an intentional snapshot) — name that contract, and don't use it as a proxy that
+unrelated code works. Name the missing test case or the tautology, not just "needs tests".
 
 ## Lane: comment-accuracy
 
