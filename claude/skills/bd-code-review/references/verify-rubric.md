@@ -25,6 +25,27 @@ the test):
 - Pedantic nitpicks a senior engineer wouldn't spend review capital on
 - Issues explicitly silenced in code (lint-ignore comments) for rules CLAUDE.md names
 
+## Finding action
+
+Every reportable finding also carries an **action** — who decides the fix. This is
+orthogonal to severity (a Critical can be `ask-user`; a Nitpick can be `auto-fix`):
+
+- **auto-fix** — one obviously-correct remedy that stays inside the change's stated
+  intent. Safe to apply on the reviewer's judgment.
+- **ask-user** — the remedy is the author's call, for either reason:
+  - it undoes or second-guesses something the diff did deliberately — a removed guard, a
+    new flag, a behaviour the intent asked for; or
+  - **the remedy, not the defect, needs authorization**: the smallest honest fix would
+    grow the change beyond its intent — new durable state, a schema change, a new
+    subsystem, retry/persistence/background machinery. Say which in the finding.
+
+Classify by the *remedy*, not the topic: a real correctness or security defect stays
+`auto-fix` when the fix is contained, even if it re-adds a little deleted logic — but it
+becomes `ask-user` the moment the honest fix means building something new.
+
+Fail closed: an action that is missing or genuinely ambiguous is `ask-user`. An
+observation that needs no fix at all is not a reportable finding here — drop it.
+
 ## Verifier instructions
 
 You receive one lane's findings as a batch. For each finding, independently verify it
@@ -42,6 +63,10 @@ Source-confirmation rules:
   what the finding claims.
 - **Resolve before flagging:** if a question the finding raises can be answered by
   reading the code, answer it — report only what remains genuinely wrong.
+- **Confirm the action:** keep the reviewer's `auto-fix`/`ask-user` tag when the remedy
+  supports it; retag `ask-user` when the smallest honest fix would grow the change beyond
+  its intent, or `auto-fix` when a tagged `ask-user` is really a contained fix. Missing or
+  ambiguous → `ask-user`.
 
 Score each verified finding 0–100:
 
@@ -64,5 +89,5 @@ Score each verified finding 0–100:
 | low, medium | score ≥ 80 |
 | high | score ≥ 60; findings below 80 display their confidence in the report |
 
-Return the batch as: `score | severity | file:line | one-line summary | citation`,
+Return the batch as: `score | severity | action | file:line | one-line summary | citation`,
 one line per surviving finding, nothing else.

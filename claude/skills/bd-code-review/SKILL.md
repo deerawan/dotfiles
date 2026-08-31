@@ -70,10 +70,10 @@ design-fidelity). Each prompt is self-contained:
 - the diff command and commit list
 - the context pack
 - that lane's brief, pasted from `references/lanes.md`
-- the `## Reportable-finding definition` section of `references/verify-rubric.md`,
-  pasted verbatim
-- return format: `severity? | file:line | summary | citation | why it matters`, one
-  line per finding, under 400 words total
+- the `## Reportable-finding definition` and `## Finding action` sections of
+  `references/verify-rubric.md`, pasted verbatim
+- return format: `severity? | action | file:line | summary | citation | why it matters`,
+  one line per finding, under 400 words total
 - verbatim: "Do NOT post, comment, merge, approve, label, or edit anything, and run no
   `gh` write commands or builds. Read only. Return your findings as text to me."
 - "Never fabricate a finding, a citation, or a line number — report nothing over
@@ -110,9 +110,9 @@ must not hide behind a standards pass. Report skeleton:
 | Lane | Ran? | Why |            ← every lane, ran or skipped-with-reason
 
 ## <Lane name>                    ← one section per lane that ran, findings numbered
-N. **[<Severity>, <confidence>]** <summary>
+N. **[<Severity>, <action>, <confidence>]** <summary>
    `file:line` — <why it matters, one or two sentences>
-   Fix: <if not obvious>
+   Fix: <if not obvious; for ask-user, name what authorizing the remedy would add>
 
 ## Strengths                      ← short, specific, file:line — never filler
 
@@ -135,8 +135,10 @@ keeps the review terminal-only, so the gate is also the opt-out. The `yolo` toke
 that approval given up front: post immediately and show what was posted. Post via
 `gh api repos/<owner>/<repo>/pulls/<n>/comments` with `path`/`line`/`commit_id`.
 
-**`fix`** — apply Critical and Important findings to the working tree; Nitpicks stay
-report-only. Commit only if asked; **never push**.
+**`fix`** — apply Critical and Important findings marked **`auto-fix`** to the working
+tree; Nitpicks stay report-only. **Never auto-apply an `ask-user` finding**, whatever its
+severity — surface each with what authorizing its remedy would add, and let the author
+decide. Commit only if asked; **never push**.
 
 **Programmatic** (invoked by another skill/agent) — end with this block so the caller
 can gate on it:
@@ -147,12 +149,13 @@ critical: <n>
 important: <n>
 nitpick: <n>
 findings:
-  - <severity> | <lane> | <file:line> | <one-line summary>
+  - <severity> | <action> | <lane> | <file:line> | <one-line summary>
 ```
 
 ## Never
 
 - Report a finding that did not pass the verifier, or re-rank findings across lanes.
+- Auto-apply an `ask-user` finding in `fix` mode.
 - Post anything to a PR without the approval gate (or its explicit `yolo` bypass), or
   outside the teammate-PR comment flow.
 - Comment on a PR the invoking user authored.
