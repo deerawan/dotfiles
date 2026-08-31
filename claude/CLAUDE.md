@@ -93,16 +93,16 @@ Every line costs context on every session. Cut filler, prefer short imperative r
 Default is no comment. Make the code say it - rename the variable, extract the function, drop the cleverness.
 
 Allowed:
-- **Why**, when non-obvious: a constraint, a business rule, a workaround (link the issue).
-- Public API docs, where the project already does it.
-- Required annotations (`# type:`, `eslint-disable`, `//go:embed`).
+- Required annotations and tooling directives (`# type:`, `eslint-disable`, `//go:embed`, `@ts-*`).
+- Generated files (`.d.ts`, `*.generated.*`, codegen output) are exempt - don't hand-edit them.
 
-Banned:
+Banned - delete and refactor:
 - Restating the code (`// increment i`)
 - Section headers (`// --- Helpers ---`)
 - Narrating your edit (`// Added per request`, `// Changed to fix bug`)
 - Commented-out code - delete it, git has it
 - TODOs without an owner or ticket
+- Explanatory prose, "why" comments included - encode the reason in a name or structure; if it truly can't live in code, tie it to an issue link
 
 The test: if a competent reader of that code would already know it, delete the comment.
 

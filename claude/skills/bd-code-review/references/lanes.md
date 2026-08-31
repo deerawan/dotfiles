@@ -23,11 +23,23 @@ Trigger: effort medium or high.
 Skip when: no CLAUDE.md/AGENTS.md or convention docs found and effort is medium.
 
 A finding in this lane IS a changed line that breaks a rule the repo documents — cite
-the file and the rule's wording — or matches one of these smells (always labeled a
-judgement call, and a documented repo standard overrides the smell): Mysterious Name,
-Duplicated Code, Feature Envy, Data Clumps, Primitive Obsession, Repeated Switches,
-Shotgun Surgery, Divergent Change, Speculative Generality, Message Chains, Middle Man,
-Refused Bequest. For each smell: name it, quote the hunk, say the fix in one line.
+the file and the rule's wording — or matches one of the smells below. Two rules bind the
+smell list: a documented repo standard always overrides it (suppress a smell the repo
+endorses), and every smell is a judgement call, never a hard violation. For each: name
+it, quote the hunk, give the fix in one line. Skip anything tooling already enforces.
+
+- **Mysterious Name**: a name that doesn't reveal what it does or holds. → rename it; if no honest name comes, the design is murky.
+- **Duplicated Code**: the same logic shape in more than one hunk or file. → extract the shape, call it from both.
+- **Feature Envy**: a method that reaches into another object's data more than its own. → move it onto the data it envies.
+- **Data Clumps**: the same few fields/params keep travelling together. → bundle them into one type, pass that.
+- **Primitive Obsession**: a primitive or string standing in for a domain concept. → give the concept its own small type.
+- **Repeated Switches**: the same switch/if-cascade on the same type recurs. → replace with polymorphism, or one shared map.
+- **Shotgun Surgery**: one logical change forces scattered edits across many files. → gather what changes together into one module.
+- **Divergent Change**: one module edited for several unrelated reasons. → split so each changes for one reason.
+- **Speculative Generality**: abstraction or hooks added for needs the spec doesn't have. → delete it; inline until a real need shows.
+- **Message Chains**: long `a.b().c().d()` navigation the caller shouldn't depend on. → hide the walk behind one method.
+- **Middle Man**: a class or function that mostly just delegates onward. → cut it, call the real target direct.
+- **Refused Bequest**: a subclass that ignores or overrides most of what it inherits. → drop the inheritance, use composition.
 
 ## Lane: spec-fidelity
 
@@ -58,13 +70,48 @@ needed to see it.
 
 ## Lane: test-coverage
 
-Trigger: source files changed while test changes are thin or absent.
-Skip when: the diff is tests-only, docs-only, or config-only.
+Trigger: source files changed while test changes are thin or absent, OR the diff
+adds/modifies tests.
+Skip when: the diff is docs-only or config-only.
 
-A finding in this lane IS a changed public behaviour with no test that would fail if it
-regressed: a new exported function without a behavioral test, a bugfix without a
-regression test, a test asserting mocks instead of behaviour. Name the missing test
-case, not just "needs tests".
+A finding in this lane IS one of: (a) a changed public behaviour with no test that would
+fail if it regressed — a new exported function without a behavioral test, a bugfix
+without a regression test; (b) a tautological test — one that cannot fail for a real
+reason because it restates the implementation instead of pinning behaviour: asserting a
+file contains the source strings it already contains, asserting a mock returns exactly
+what it was stubbed to return, or re-deriving the expected value with the code under
+test. Name the missing test case or the tautology, not just "needs tests".
+
+## Lane: comment-accuracy
+
+Trigger: the diff adds or modifies comments, docstrings, or doc comments.
+Skip when: no comment or docstring lines in the changed hunks.
+
+A finding in this lane IS a comment on a changed line that misdescribes the code it
+documents — a docstring param/return that doesn't match the signature, described
+behaviour that contradicts the logic, a referenced symbol that doesn't exist, a claimed
+edge case the code doesn't handle, a stale reference to since-refactored code, or a
+TODO/FIXME the diff already resolved. Quote the comment and the code line it contradicts.
+This is comment *rot* — a comment that lies. Whether a comment should exist at all is the
+comment-hygiene lane's job.
+
+## Lane: comment-hygiene
+
+Trigger: the diff adds or modifies comments or docstrings.
+Skip when: no comment lines in the changed hunks, or the file is generated (`.d.ts`,
+`.generated.`, or a documented codegen path).
+
+A finding in this lane IS a prose comment on a changed line — the default is that it
+should not exist. For each: flag it and give the refactor that removes the need for it —
+rename to a revealing name, extract a well-named function or constant, restructure so the
+code states what the comment says. Allowlist, never flagged: tooling and compiler
+directives (`@ts-*`, `eslint-*`, `oxlint-*`, coverage pragmas like `c8`/`istanbul`,
+`/// <reference>`, shebangs) and required annotations (`//go:embed` and the like). For an
+irreducible *why* the code genuinely cannot express — a business rule, an external
+constraint, an incident workaround — still surface it, but suggest anchoring it to an
+issue link rather than an impossible refactor. Severity: Important by default so `fix`
+removes them; an irreducible *why* anchored to an issue link is a Nitpick. Comment rot is
+the comment-accuracy lane's job, not this one.
 
 ## Lane: type-design
 

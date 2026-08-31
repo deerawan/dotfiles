@@ -117,7 +117,7 @@ N. **[<Severity>, <confidence>]** <summary>
 ## Strengths                      ← short, specific, file:line — never filler
 
 ---
-findings: N (critical X / important Y / nitpick Z) · lanes run x/9 · effort <level>
+findings: N (critical X / important Y / nitpick Z) · lanes run x/11 · effort <level>
 ```
 
 ## Output modes
