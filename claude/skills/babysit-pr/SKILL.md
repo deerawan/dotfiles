@@ -67,7 +67,7 @@ Check draft status first (`isDraft` from step 1):
 Resolve conflicts, re-run the relevant build/test, commit. **→ GATE: pause for push.**
 
 ### 6. Review comments
-Delegate the *how* to the `receiving-code-review` skill (invoke it). For each unresolved thread:
+Delegate the *how* to the `bd-receiving-review` skill (invoke it). For each unresolved thread:
 - **Verify against the codebase first** — is the suggestion correct for *this* repo? Does it break something? Is there a reason for the current code?
 - Decide **Fix / push-back / Escalate**, one item at a time, no performative agreement ("You're absolutely right!" is forbidden).
 - **Draft** the reply for each thread and show it in the report — do **not** post it. **→ GATE: pause for reply approval.** Only after the user approves, post it in the thread (never as a top-level PR comment):
@@ -106,7 +106,7 @@ Report concisely:
 - **Reply in review threads** (once approved), not top-level comments. Don't dismiss reviews.
 - **Preserve the PR description** — never regenerate it.
 - **Respect the repo's AGENTS.md / CLAUDE.md** and coding conventions.
-- **No performative agreement** on review feedback (see `receiving-code-review`).
+- **No performative agreement** on review feedback (see `bd-receiving-review`).
 
 ## Stop conditions
 - Merge-ready → report + stop.
