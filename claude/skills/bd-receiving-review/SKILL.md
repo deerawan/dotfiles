@@ -100,9 +100,9 @@ on the author's behalf, so **read `~/.claude/VOICE.md` and follow it**. In pract
 - Emoji only if the author would: a lone 👍 on a trivially-done thread is fine, never one
   per reply and never to manufacture enthusiasm.
 
-After a thread is addressed, the author resolves it (not the reviewer); leave it open
-only while you still need something back. After addressing "request changes", re-request
-review explicitly.
+Never resolve a review thread — resolving is the reviewer's call, not the author's. Post
+the reply and leave the thread open for the reviewer to close. After addressing "request
+changes", re-request review explicitly.
 
 ## Step 7: The gate
 
@@ -122,4 +122,5 @@ but never `git push` and never post replies until told.
 - Reply with performative agreement, or with more than one sentence.
 - Add an explanatory comment to settle a review instead of refactoring.
 - Post replies or push without the approval gate.
+- Resolve a review thread — that is the reviewer's call.
 - Argue about a reviewer's tone in the thread — raise that privately, off the PR.
