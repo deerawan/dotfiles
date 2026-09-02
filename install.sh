@@ -174,6 +174,7 @@ setup_homebrew() {
     action "Installing herdr plugins"
     herdr plugin install plannotator/herdr-annotate --yes
     herdr plugin install fabiogaliano/herdr-command-palette --yes
+    herdr plugin install martin-ro/herdr-next-agent --yes
 }
 
 setup_shell() {

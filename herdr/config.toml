@@ -111,7 +111,7 @@ open_worktree = "prefix+alt+o"
 remove_worktree = "prefix+alt+shift+x"
 
 # agents
-next_agent = ["prefix+a", "ctrl+alt+a"]
+next_agent = "ctrl+alt+a"
 previous_agent = "prefix+shift+a"
 
 # global — unscoped, no ladder
@@ -365,3 +365,9 @@ key = "prefix+p"
 type = "shell"
 command = "herdr plugin pane open --plugin palette --entrypoint palette"
 description = "Command palette"
+
+[[keys.command]]
+key = "prefix+a"
+type = "plugin_action"
+command = "martinro.next-agent.jump"
+description = "next agent needing attention"
