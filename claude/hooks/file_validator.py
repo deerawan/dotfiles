@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import json
+import os
 import re
 import sys
 
 PROTECTED_PATTERNS = [
-    (r"\.env($|\.)", "BLOCKED: .env files are protected"),
     (r"credentials", "BLOCKED: Credential files are protected"),
     (r"secrets?\.(json|ya?ml|txt)", "BLOCKED: Secret files are protected"),
     (r"\.pem$", "BLOCKED: PEM files are protected"),
@@ -16,7 +16,18 @@ PROTECTED_PATTERNS = [
     (r"pulumi\.[^/]*prod[^/]*\.ya?ml", "BLOCKED: Production Pulumi config"),
 ]
 
-def validate_file_path(file_path, tool_name):
+ENV_PATTERN = re.compile(r"\.env($|\.)", re.IGNORECASE)
+
+def is_project_local(file_path, cwd):
+    if not os.path.isabs(file_path):
+        return True
+    root = os.path.realpath(cwd) if cwd else os.getcwd()
+    resolved = os.path.realpath(file_path)
+    return resolved == root or resolved.startswith(root + os.sep)
+
+def validate_file_path(file_path, tool_name, cwd):
+    if ENV_PATTERN.search(file_path) and not is_project_local(file_path, cwd):
+        return False, f"BLOCKED: .env files outside the project are protected (attempted: {tool_name})"
     for pattern, message in PROTECTED_PATTERNS:
         if re.search(pattern, file_path, re.IGNORECASE):
             return False, f"{message} (attempted: {tool_name})"
@@ -26,8 +37,9 @@ try:
     input_data = json.load(sys.stdin)
     tool_name = input_data.get('tool_name', '')
     file_path = input_data.get('tool_input', {}).get('file_path', '')
+    cwd = input_data.get('cwd', '')
 
-    is_safe, reason = validate_file_path(file_path, tool_name)
+    is_safe, reason = validate_file_path(file_path, tool_name, cwd)
 
     if not is_safe:
         print(reason, file=sys.stderr)
