@@ -1,6 +1,5 @@
 # taps
 tap "yqrashawn/goku"
-tap "manaflow-ai/cmux"
 
 brew "noti" # utility to display notifications from scripts
 brew "trash" # rm, but put in the trash rather than completely delete
@@ -21,7 +20,6 @@ cask "discord"
 cask "telegram"
 
 # coding
-cask "cmux"
 cask "firefox"
 cask "google-chrome"
 cask "visual-studio-code"

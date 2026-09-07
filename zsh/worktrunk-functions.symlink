@@ -1,4 +1,4 @@
-# Git worktree + cmux workspace functions
+# Git worktree + herdr workspace functions
 # Ported from https://github.com/roderik/dotfiles-2026/.config/fish/functions/
 
 __wt_repo_root() {
@@ -40,10 +40,6 @@ __wt_in_herdr() {
   [[ "${HERDR_ENV:-}" == 1 ]] && command -v herdr &>/dev/null
 }
 
-__wt_in_cmux() {
-  [[ -n "${CMUX_WORKSPACE_ID:-}" ]] && command -v cmux &>/dev/null
-}
-
 # Open $branch's worktree as its own herdr workspace and echo "<workspace_id> <root_pane_id>".
 # Binding the workspace to the worktree is what nests it under the repo in the sidebar,
 # so the worktree must already exist before this is called.
@@ -73,90 +69,6 @@ __wt_herdr_open() {
   fi
 
   echo "$ws_id $ws_pane"
-}
-
-__wt_cmux_rename() {
-  local name="$1"
-  [[ -z "$name" ]] && return
-  command -v cmux &>/dev/null || return
-  [[ -n "$CMUX_WORKSPACE_ID" ]] || return
-  cmux workspace-action --action rename --title "$name" 2>/dev/null
-}
-
-__wt_cmux_setup() {
-  command -v cmux &>/dev/null || return 0
-
-  local force=false
-  local initial_prompt=""
-  for arg in "$@"; do
-    case "$arg" in
-      --force) force=true ;;
-      --prompt=*) initial_prompt="${arg#--prompt=}" ;;
-    esac
-  done
-
-  # Resolve workspace ID
-  local ws_id
-  if [[ -n "$CMUX_WORKSPACE_ID" ]]; then
-    ws_id="$CMUX_WORKSPACE_ID"
-  else
-    ws_id=$(cmux identify --json 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['caller']['workspace_ref'])" 2>/dev/null)
-  fi
-  if [[ -z "$ws_id" ]]; then
-    echo "cmux: not in a workspace — skipping layout setup"
-    return 1
-  fi
-
-  local workdir="$PWD"
-
-  # Get current pane topology
-  local main_pane
-  main_pane=$(cmux list-panes --workspace "$ws_id" 2>/dev/null | grep -oE 'pane:[0-9]+' | head -1)
-  if [[ -z "$main_pane" ]]; then
-    echo "cmux: could not detect panes"
-    return 1
-  fi
-
-  # Idempotency guard — skip if layout already has multiple panes
-  local pane_count
-  pane_count=$(cmux list-panes --workspace "$ws_id" 2>/dev/null | grep -cE 'pane:[0-9]+')
-  if [[ "$pane_count" -gt 1 ]] && [[ "$force" == false ]]; then
-    return 0
-  fi
-
-  local main_surface
-  main_surface=$(cmux list-pane-surfaces --workspace "$ws_id" --pane "$main_pane" 2>/dev/null | grep -oE 'surface:[0-9]+' | head -1)
-  if [[ -z "$main_surface" ]]; then
-    echo "cmux: could not detect main surface"
-    return 1
-  fi
-
-  # 1. Right split → lazygit (full height, narrow)
-  local lg_surface
-  lg_surface=$(cmux new-split right --workspace "$ws_id" 2>/dev/null | grep -oE 'surface:[0-9]+' | head -1)
-  if [[ -n "$lg_surface" ]]; then
-    cmux resize-pane --workspace "$ws_id" --pane "$main_pane" -R --amount 200 2>/dev/null
-    cmux send --workspace "$ws_id" --surface "$lg_surface" "cd '$workdir' && lazygit\n" 2>/dev/null
-    cmux rename-tab --workspace "$ws_id" --surface "$lg_surface" "Git" 2>/dev/null
-  fi
-
-  # 2. Bottom split under main → terminal
-  local term_surface
-  term_surface=$(cmux new-split down --workspace "$ws_id" --surface "$main_surface" 2>/dev/null | grep -oE 'surface:[0-9]+' | head -1)
-  if [[ -n "$term_surface" ]]; then
-    cmux resize-pane --workspace "$ws_id" --pane "$main_pane" -D --amount 200 2>/dev/null
-    cmux send --workspace "$ws_id" --surface "$term_surface" "cd '$workdir'\n" 2>/dev/null
-    cmux rename-tab --workspace "$ws_id" --surface "$term_surface" "Terminal" 2>/dev/null
-  fi
-
-  # 3. Start Claude in main pane
-  cmux focus-pane --pane "$main_pane" --workspace "$ws_id" 2>/dev/null
-  local claude_cmd='claude --permission-mode auto'
-  if [[ -n "$initial_prompt" ]]; then
-    # Prompt is constructed without single quotes upstream (see wtj) so '...' wrapping is safe.
-    claude_cmd="claude --permission-mode auto '$initial_prompt'"
-  fi
-  cmux send --workspace "$ws_id" --surface "$main_surface" "$claude_cmd"$'\n' 2>/dev/null
 }
 
 __wt_herdr_setup() {
@@ -231,30 +143,8 @@ wtc() {
     herdr pane run "$ws_pane" "__wt_install_deps && __wt_herdr_setup" >/dev/null 2>&1
 
     echo "Workspace '$branch' ($ws_id) created."
-  elif __wt_in_cmux; then
-    # Create a new cmux workspace and send all commands to it
-    local ws_uuid
-    ws_uuid=$(cmux new-workspace 2>/dev/null | awk '{print $2}')
-    if [[ -z "$ws_uuid" ]]; then
-      echo "cmux: failed to create new workspace"
-      return 1
-    fi
-
-    # Rename workspace
-    cmux workspace-action --action rename --workspace "$ws_uuid" --title "$branch" 2>/dev/null
-
-    # Get the main surface of the new workspace
-    local ws_pane ws_surface
-    ws_pane=$(cmux list-panes --workspace "$ws_uuid" 2>/dev/null | grep -oE 'pane:[0-9]+' | head -1)
-    ws_surface=$(cmux list-pane-surfaces --workspace "$ws_uuid" --pane "$ws_pane" 2>/dev/null | grep -oE 'surface:[0-9]+' | head -1)
-
-    # Send worktree creation + layout setup to the new workspace's terminal
-    cmux send --workspace "$ws_uuid" --surface "$ws_surface" \
-      "cd '$repo_root' && git fetch origin main && wt switch --create --base origin/main $branch && __wt_install_deps && __wt_cmux_setup\n" 2>/dev/null
-
-    echo "Workspace '$branch' created."
   else
-    # No herdr/cmux — just create worktree in current shell
+    # No herdr — just create worktree in current shell
     cd "$repo_root" && git fetch origin main && wt switch --create --base origin/main "$@" && __wt_install_deps || return 1
     echo ""
     echo "Worktree created: $PWD"
@@ -301,24 +191,6 @@ wtpr() {
     herdr pane run "$ws_pane" "__wt_install_deps && __wt_herdr_setup" >/dev/null 2>&1
 
     echo "Workspace '$branch' ($ws_id) created for PR #$pr_number."
-  elif __wt_in_cmux; then
-    local ws_uuid
-    ws_uuid=$(cmux new-workspace 2>/dev/null | awk '{print $2}')
-    if [[ -z "$ws_uuid" ]]; then
-      echo "cmux: failed to create new workspace"
-      return 1
-    fi
-
-    cmux workspace-action --action rename --workspace "$ws_uuid" --title "$branch" 2>/dev/null
-
-    local ws_pane ws_surface
-    ws_pane=$(cmux list-panes --workspace "$ws_uuid" 2>/dev/null | grep -oE 'pane:[0-9]+' | head -1)
-    ws_surface=$(cmux list-pane-surfaces --workspace "$ws_uuid" --pane "$ws_pane" 2>/dev/null | grep -oE 'surface:[0-9]+' | head -1)
-
-    cmux send --workspace "$ws_uuid" --surface "$ws_surface" \
-      "cd '$repo_root' && git fetch origin $branch && wt switch $branch && __wt_install_deps && __wt_cmux_setup\n" 2>/dev/null
-
-    echo "Workspace '$branch' created for PR #$pr_number."
   else
     cd "$repo_root" && git fetch origin "$branch" && wt switch "$branch" && __wt_install_deps || return 1
     echo ""
@@ -365,34 +237,11 @@ wtj() {
     herdr pane run "$ws_pane" "__wt_install_deps && __wt_herdr_setup --prompt=$prompt_arg" >/dev/null 2>&1
 
     echo "Workspace '$branch' ($ws_id) created for JIRA ticket $jira_key."
-  elif __wt_in_cmux; then
-    jira_prompt="${jira_prompt_pre}cmux workspace-action --action rename --title \"${jira_key} <short-title>\"${jira_prompt_post}"
-
-    local ws_uuid
-    ws_uuid=$(cmux new-workspace 2>/dev/null | awk '{print $2}')
-    if [[ -z "$ws_uuid" ]]; then
-      echo "cmux: failed to create new workspace"
-      return 1
-    fi
-
-    cmux workspace-action --action rename --workspace "$ws_uuid" --title "$branch" 2>/dev/null
-
-    local ws_pane ws_surface
-    ws_pane=$(cmux list-panes --workspace "$ws_uuid" 2>/dev/null | grep -oE 'pane:[0-9]+' | head -1)
-    ws_surface=$(cmux list-pane-surfaces --workspace "$ws_uuid" --pane "$ws_pane" 2>/dev/null | grep -oE 'surface:[0-9]+' | head -1)
-
-    # %q-escape the prompt so it survives being embedded in the outer command string.
-    prompt_arg=$(printf '%q' "$jira_prompt")
-
-    cmux send --workspace "$ws_uuid" --surface "$ws_surface" \
-      "cd '$repo_root' && git fetch origin main && wt switch --create --base origin/main $branch && __wt_install_deps && __wt_cmux_setup --prompt=$prompt_arg"$'\n' 2>/dev/null
-
-    echo "Workspace '$branch' created for JIRA ticket $jira_key."
   else
     cd "$repo_root" && git fetch origin main && wt switch --create --base origin/main "$branch" && __wt_install_deps || return 1
     echo ""
     echo "Worktree created for $jira_key: $PWD"
-    echo "(no herdr/cmux session — start claude manually with: claude --permission-mode auto)"
+    echo "(no herdr session — start claude manually with: claude --permission-mode auto)"
   fi
 }
 
@@ -414,7 +263,7 @@ wtd() {
   fi
 
   # Capture the workspace this worktree lives in before leaving it
-  local worktree_path ws_id="$CMUX_WORKSPACE_ID"
+  local worktree_path
   local herdr_ws="$HERDR_WORKSPACE_ID" herdr_pane="$HERDR_PANE_ID"
   worktree_path=$(git rev-parse --show-toplevel 2>/dev/null)
 
@@ -441,8 +290,5 @@ wtd() {
       echo "Closing herdr pane..."
       herdr pane close "$herdr_pane" >/dev/null 2>&1
     fi
-  elif command -v cmux &>/dev/null && [[ -n "$ws_id" ]]; then
-    echo "Closing cmux workspace..."
-    cmux close-workspace --workspace "$ws_id" 2>/dev/null
   fi
 }
