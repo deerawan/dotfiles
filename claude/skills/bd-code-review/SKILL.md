@@ -128,11 +128,15 @@ findings: N (critical X / important Y / nitpick Z) · lanes run x/11 · effort <
 first: `gh pr view <pr> --json author -q .author.login` vs `gh api user -q .login`.
 **Equal ⇒ report-only** with the note "comments skipped — you authored this PR" (yolo
 included; commenting on your own PR is noise). **Different ⇒ always draft comments**:
-each finding becomes one inline comment (severity prefix, full-SHA permalink: blob URL
-with the full sha1, `#L<start>-L<end>`, ≥1 context line each side), all drafts shown
-in the report, then **stop for explicit approval before any `gh` write** — declining
-keeps the review terminal-only, so the gate is also the opt-out. The `yolo` token is
-that approval given up front: post immediately and show what was posted. Post via
+each finding becomes one inline comment — body drafted per `references/comment-style.md`
+(tone rules, then a humanizer pass in the author's voice) — carrying an id `C1..Cn`, a
+severity prefix, and a full-SHA permalink (blob URL with the full sha1,
+`#L<start>-L<end>`, ≥1 context line each side). Show every draft with its id in the
+report, then **stop for explicit approval before any `gh` write**. At the gate a
+selection posts only the chosen ids — `post all`, `post C1 C3`, `post all except C2` —
+and declining keeps the review terminal-only, so the gate is also the opt-out. The
+`yolo` token is approval for the whole batch given up front: post every draft
+immediately and show what was posted. Post via
 `gh api repos/<owner>/<repo>/pulls/<n>/comments` with `path`/`line`/`commit_id`.
 
 **`fix`** — apply Critical and Important findings marked **`auto-fix`** to the working

@@ -12,10 +12,11 @@ Run it by hand after any change to SKILL.md's comment flow or the approval gate.
 ## Assertions
 
 1. **Teammate PR, no tokens** — `/bd-code-review <PR A>`:
-   - drafts one inline comment per surviving finding, shown in the report, WITHOUT
-     being asked to (comments are automatic on teammates' PRs)
+   - drafts one inline comment per surviving finding, each carrying an id `C1..Cn`,
+     shown in the report, WITHOUT being asked to (comments are automatic on teammates' PRs)
    - then STOPS for approval; the trace contains no `gh` write (`gh api ... pulls/*/comments`,
      `gh pr comment`, `gh pr review`) before your explicit yes
+   - a partial selection (`post C1`) posts only C1; the other drafts are not posted
    - decline the approval → nothing is posted; the review stays terminal-only.
 2. **Teammate PR, yolo** — `/bd-code-review <PR A> yolo`: posts immediately, report
    shows exactly what was posted; each comment severity-prefixed, anchored at the
