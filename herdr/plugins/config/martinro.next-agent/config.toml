@@ -1,7 +1,7 @@
 # Agent statuses that count as "needs attention", highest priority first.
 # Statuses not listed are never jumped to.
 # Known statuses: blocked, done, working, idle, unknown
-priority = ["blocked", "done", "idle"]
+priority = ["blocked", "done"]
 
 # "all" = consider agents in every workspace; "workspace" = active workspace only
 scope = "all"
