@@ -1,0 +1,46 @@
+[branch]
+date = false
+date_format = "%m-%d"
+replacement = "-"
+stale_days = 30
+
+[remote]
+name = "origin"
+base_url = "https://github.com"
+
+[submit]
+stack_links = "off"
+native_stack = "link"
+stack_links_when_native = "keep"
+single_stack = "on"
+
+[ci]
+alert = false
+
+[ui]
+tips = true
+
+[display]
+worktree_glyph = "auto"
+
+[ai]
+
+[auth]
+use_gh_cli = true
+allow_github_token_env = false
+
+[worktree]
+root_dir = ""
+reuse_slots = true
+max_idle_slots = 4
+
+[worktree.hooks]
+
+[git]
+rerere = true
+
+[restack]
+preflight_auto_repair = true
+preflight_warn = true
+
+[skills]

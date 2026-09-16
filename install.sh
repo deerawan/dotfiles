@@ -87,6 +87,11 @@ setup_symlinks() {
     mkdir -p "$HOME/.config/herdr/plugins"
     create_symlink "$DOTFILES/herdr/plugins/config" "$HOME/.config/herdr/plugins/config"
 
+    # stax config. Linked so [submit] native_stack / stack_links stay versioned;
+    # stax also writes here (e.g. saved AI defaults), so expect repo churn.
+    mkdir -p "$HOME/.config/stax"
+    create_symlink "$DOTFILES/stax/config.toml" "$HOME/.config/stax/config.toml"
+
     # claude config
     mkdir -p "$HOME/.claude/skills"
     create_symlink "$DOTFILES/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
