@@ -98,7 +98,10 @@ Replies use this vocabulary and nothing looser. The commit SHA is the acknowledg
 | No change needed | `Already handled at <file:line>.` |
 
 The free-form parts (the `because` reason, the clarification question) are prose written
-on the author's behalf, so **read `~/.claude/VOICE.md` and follow it**. In practice:
+on the author's behalf, so **read `~/.claude/VOICE.md`, then pass the drafted prose through
+the `humanizer:humanizer` skill in embedded mode** — VOICE.md is the writing sample it
+matches, and embedded mode returns only the final text. Templates with no prose (`Fixed in
+<sha>.`) skip it. In practice:
 
 - One sentence, declarative. Contractions. State the why with "because".
 - A clarification question is specific: "Do you mean X or Y?", not "Can you elaborate?".
