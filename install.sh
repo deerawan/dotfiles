@@ -180,6 +180,7 @@ setup_homebrew() {
     herdr plugin install plannotator/herdr-annotate --yes
     herdr plugin install fabiogaliano/herdr-command-palette --yes
     herdr plugin install martin-ro/herdr-next-agent --yes
+    herdr plugin install qu8n/herdr-automatic-rename --yes
 }
 
 setup_shell() {
