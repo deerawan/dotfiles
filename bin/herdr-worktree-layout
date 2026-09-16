@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Split a herdr pane into the standard worktree layout: the given pane stays put
+# (claude), lazygit takes a full-height column on the right, a terminal runs along
+# the bottom. Shared by wtj/wtc/wtpr (__wt_herdr_setup) and bd-execute's crew spawn
+# so both open identical layouts. Splits are best-effort — a failure is cosmetic and
+# never fatal to the caller.
+#
+# Usage: herdr-worktree-layout --pane <pane-id> [--cwd <dir>]
+
+pane="" cwd="$PWD"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --pane) pane="$2"; shift 2 ;;
+    --cwd)  cwd="$2";  shift 2 ;;
+    *) echo "herdr-worktree-layout: unknown arg: $1" >&2; exit 1 ;;
+  esac
+done
+[[ -n "$pane" ]] || { echo "herdr-worktree-layout: --pane required" >&2; exit 1; }
+
+# Right split → lazygit (full height, narrow). --ratio is the original pane's share.
+lg_pane="$(herdr pane split "$pane" --direction right --ratio 0.72 --cwd "$cwd" --no-focus 2>/dev/null | jq -r '.result.pane.pane_id // empty' || true)"
+if [[ -n "$lg_pane" ]]; then
+  herdr pane rename "$lg_pane" "Git" >/dev/null 2>&1 || true
+  herdr pane run "$lg_pane" "lazygit" >/dev/null 2>&1 || true
+fi
+
+# Bottom split under the given pane → terminal.
+term_pane="$(herdr pane split "$pane" --direction down --ratio 0.75 --cwd "$cwd" --no-focus 2>/dev/null | jq -r '.result.pane.pane_id // empty' || true)"
+[[ -n "$term_pane" ]] && { herdr pane rename "$term_pane" "Terminal" >/dev/null 2>&1 || true; }

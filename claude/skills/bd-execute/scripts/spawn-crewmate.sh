@@ -52,7 +52,11 @@ pane_id="$(echo "$tab_json" | jq -r '.result.root_pane.pane_id')"
 tab_id="$(echo "$tab_json" | jq -r '.result.tab.tab_id')"
 [[ -n "$pane_id" && "$pane_id" != "null" ]] || { echo "failed to create tab: $tab_json" >&2; exit 1; }
 
-# 3. Start claude in the pane. The agent NAME is the stable address (layout-independent:
+# 2b. Lay out the tab: claude in the main pane, lazygit full-height on the right, a
+#     terminal along the bottom. Cosmetic — a failed split must never abort the spawn.
+herdr-worktree-layout --pane "$pane_id" --cwd "$wt_path" || true
+
+# 3. Start claude in the main pane. The agent NAME is the stable address (layout-independent:
 #    survives pane moves/splits, unlike pane ids; tab ids are not valid agent targets).
 #    Prefix with the run slug so task ids never collide across runs — but herdr caps names
 #    at 32 chars, so truncate the slug part deterministically and disambiguate with a short

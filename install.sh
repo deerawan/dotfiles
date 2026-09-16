@@ -58,6 +58,9 @@ setup_symlinks() {
         create_symlink "$file" "$target"
     done
 
+    # bin scripts on PATH — ~/.bin is already added to PATH in zsh/my-zshrc.symlink
+    create_symlink "$DOTFILES/bin" "$HOME/.bin"
+
     # karabiner - it needs to be put under .config folder
     target="$HOME/.config/karabiner.edn"
     create_symlink "$DOTFILES/karabiner/karabiner.edn" "$target"

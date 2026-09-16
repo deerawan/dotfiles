@@ -99,22 +99,10 @@ __wt_herdr_setup() {
     return 0
   fi
 
-  # 1. Right split → lazygit (full height, narrow). --ratio is the original pane's share.
-  local lg_pane
-  lg_pane=$(herdr pane split "$main_pane" --direction right --ratio 0.72 --cwd "$workdir" --no-focus 2>/dev/null \
-    | jq -r '.result.pane.pane_id // empty')
-  if [[ -n "$lg_pane" ]]; then
-    herdr pane rename "$lg_pane" "Git" >/dev/null 2>&1
-    herdr pane run "$lg_pane" "lazygit" >/dev/null 2>&1
-  fi
+  # 1. Split into the shared worktree layout: lazygit right, terminal bottom.
+  herdr-worktree-layout --pane "$main_pane" --cwd "$workdir"
 
-  # 2. Bottom split under main → terminal
-  local term_pane
-  term_pane=$(herdr pane split "$main_pane" --direction down --ratio 0.75 --cwd "$workdir" --no-focus 2>/dev/null \
-    | jq -r '.result.pane.pane_id // empty')
-  [[ -n "$term_pane" ]] && herdr pane rename "$term_pane" "Terminal" >/dev/null 2>&1
-
-  # 3. Start Claude in main pane
+  # 2. Start Claude in main pane
   local claude_cmd='claude --permission-mode auto'
   if [[ -n "$initial_prompt" ]]; then
     # Prompt is constructed without single quotes upstream so '...' wrapping is safe.
