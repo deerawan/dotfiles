@@ -11,9 +11,6 @@ alias cca="claude --permission-mode auto"
 source $HOME/.aliases
 source $HOME/.worktrunk-functions
 
-# ASDF
-. /opt/homebrew/opt/asdf/libexec/asdf.sh
-
 # NVM
 export NVM_DIR="$HOME/.nvm"
 [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
