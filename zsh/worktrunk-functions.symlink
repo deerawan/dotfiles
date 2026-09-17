@@ -204,8 +204,8 @@ wtj() {
 
   # Prompt intentionally single-quote-free so it can be wrapped in '...' when sent into the workspace shell.
   # The rename step differs per workspace manager, so it is spliced in by the branches below.
-  local jira_prompt_pre="You are working in a workspace for JIRA ticket ${jira_key}. Please: (1) fetch the ticket title and description via the Atlassian MCP (mcp__claude_ai_Atlassian__getJiraIssue); (2) rename this workspace by running in bash: "
-  local jira_prompt_post=" — pick a concise 3-6 word summary from the ticket title; (3) explore the codebase and draft an implementation plan for this ticket before making changes."
+  local jira_prompt_pre="You are working in a workspace for JIRA ticket ${jira_key}. Please: (1) use the bd-plan skill to ground ${jira_key} against the ticket and draft an implementation plan for it; (2) then rename this workspace by running in bash: "
+  local jira_prompt_post=" — pick a concise 3-6 word summary from the ticket title bd-plan already fetched."
   local jira_prompt prompt_arg
 
   # Always open the ticket in its own workspace — never take over the current one.
