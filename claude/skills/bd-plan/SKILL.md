@@ -430,6 +430,14 @@ Do the re-run / `.vN` snapshot handling below at this point — after approval,
 never before. Snapshotting a plan the user then rejects leaves a `.v2` file
 recording a version that was never adopted.
 
+### 8c. Line review — `human-review`
+
+Once the plan is saved, hand it to the **human-review** skill (`/human-review`)
+on the saved file so the user can edit and comment on the plan in the browser.
+Fold every edit and comment back into the plan file, preserving its Markdown
+formatting; append substantive changes to Revision History. This is bd-plan's
+review surface — it does not rely on plannotator's `ExitPlanMode` UI.
+
 **Plan document skeleton:**
 
 ```markdown
@@ -466,7 +474,6 @@ gets un-checked — and append what changed to Revision History.
 
 **Handoff — offer, don't perform:**
 - a separate review pass to critique it (bd-plan never reviews its own output)
-- user annotation or edits to the plan file
 - execution (this session or a fresh one, plan file as the prompt)
 
 ---
