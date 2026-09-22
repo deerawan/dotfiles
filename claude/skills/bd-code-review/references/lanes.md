@@ -41,6 +41,14 @@ it, quote the hunk, give the fix in one line. Skip anything tooling already enfo
 - **Middle Man**: a class or function that mostly just delegates onward. → cut it, call the real target direct.
 - **Refused Bequest**: a subclass that ignores or overrides most of what it inherits. → drop the inheritance, use composition.
 
+Reuse audit: for new logic that formats/parses/transforms primitives (numbers, dates,
+currency, strings) or reimplements a common operation, and for a fresh constant or
+literal (a magic value, config key, enum member, regex) that likely already exists, grep
+the project's shared utility/library/constant modules (and any barrel exports) for an
+existing helper or definition before accepting it. A hand-rolled platform-primitive call
+(e.g. `Intl.*`), hand-written date math, or a redefined constant is a finding unless
+justified as "no existing helper or definition covers this."
+
 ## Lane: spec-fidelity
 
 Trigger: effort high, and a spec source was discovered (ticket, plan file, PR body).
