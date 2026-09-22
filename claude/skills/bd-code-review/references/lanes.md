@@ -40,6 +40,7 @@ it, quote the hunk, give the fix in one line. Skip anything tooling already enfo
 - **Message Chains**: long `a.b().c().d()` navigation the caller shouldn't depend on. → hide the walk behind one method.
 - **Middle Man**: a class or function that mostly just delegates onward. → cut it, call the real target direct.
 - **Refused Bequest**: a subclass that ignores or overrides most of what it inherits. → drop the inheritance, use composition.
+- **Convention Drift**: a new name in a set of sibling files (entity/repo/interface/criteria/DTO for one concept, or members of an enum/module) breaks the prefix, suffix, or casing pattern its siblings share. → align it, or justify the deviation as a real distinction. Read the sibling paths in the touched set, not just the changed hunk.
 
 Reuse audit: for new logic that formats/parses/transforms primitives (numbers, dates,
 currency, strings) or reimplements a common operation, and for a fresh constant or
