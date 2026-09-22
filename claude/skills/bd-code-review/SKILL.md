@@ -1,7 +1,7 @@
 ---
 name: bd-code-review
 description: Multi-lane adversarial code review with a verification gate — reviews a PR, branch, or working tree against correctness, the originating spec/ticket, repo standards, and (for UI changes with a Figma link) design fidelity, reporting only verified findings by severity. Use when asked to review code, a PR, a branch, or a diff, or as a post-implementation checkpoint from another skill. Triggers on "review this PR", "review my changes", "bd-code-review". Not for reviewing plans or specs — that is plan-review. Not for replying to existing PR feedback — that is babysit-pr.
-argument-hint: "[PR number/URL, ref, or blank for working tree] [low|medium|high] [yolo] [fix]"
+argument-hint: "[PR number/URL, ref, or blank for working tree] [yolo] [fix]"
 ---
 
 # bd-code-review
@@ -12,7 +12,7 @@ verifiers are fresh subagents — never this session's context. Unrecognized tok
 note and ignore.
 
 ```text
-scope → context pack → roster (effort dial) → parallel lanes → per-lane verifier
+scope → context pack → roster → parallel lanes → per-lane verifier
                                                                      ↓
                         report (default) | comment (gated) | fix | verdict block
 ```
@@ -24,7 +24,7 @@ scope → context pack → roster (effort dial) → parallel lanes → per-lane 
 | PR number/URL | `gh pr view` (title, body, author) + `gh pr diff` |
 | Bare ref/branch | `git diff <ref>...HEAD` (three-dot, merge-base) |
 | No target | working tree + branch: `git diff $(git merge-base origin/<default> HEAD)` |
-| Programmatic (another skill passed SHAs) | `git diff <base>...<head>`; caller may pass a spec/plan path and an effort |
+| Programmatic (another skill passed SHAs) | `git diff <base>...<head>`; caller may pass a spec/plan path |
 
 Before any agent spawns: the ref must resolve (`git rev-parse`), the diff must be
 non-empty, and a PR target must be open and not draft. Fail here with the bad ref or
@@ -46,18 +46,11 @@ One cheap pass, handed to every reviewer:
 
 A source that isn't found is recorded for the Coverage section, not an error.
 
-## Step 3: Select the roster — effort dial
+## Step 3: Select the roster
 
-Default effort **medium**; programmatic callers default **low** unless they pass one.
-
-| Effort | Lanes |
-|---|---|
-| low | correctness only |
-| medium | + standards + whichever specialists trigger |
-| high | + spec-fidelity + past-pr-comments + all triggered specialists, thresholds loosened |
-
-Read `references/lanes.md` now — each lane's `Trigger:` and `Skip when:` lines decide
-the roster mechanically. **Degradation rule:** a lane whose tool or source is missing
+Every lane runs whenever its own source exists. Read `references/lanes.md` now — each
+lane's `Trigger:` and `Skip when:` lines decide the roster mechanically. **Degradation
+rule:** a lane whose tool or source is missing
 (no spec, no Figma or Figma MCP, `gh` unauthenticated) skips and is listed in Coverage
 with its reason; it never fails the run.
 
@@ -85,8 +78,8 @@ For each lane that returned findings, dispatch **one verifier subagent per lane*
 (batch — never one agent per finding), read-only agent type, whose prompt is the whole
 of `references/verify-rubric.md` plus that lane's findings and the diff command.
 
-Apply the thresholds from the rubric (≥80 at low/medium; ≥60 at high, confidence shown
-below 80). A lane with zero findings needs no verifier. Findings that die here are
+Apply the threshold from the rubric (score ≥ 60; findings below 80 show their
+confidence). A lane with zero findings needs no verifier. Findings that die here are
 gone — they never appear in any output mode.
 
 ## Step 6: Report
@@ -117,7 +110,7 @@ N. **[<Severity>, <action>, <confidence>]** <summary>
 ## Strengths                      ← short, specific, file:line — never filler
 
 ---
-findings: N (critical X / important Y / nitpick Z) · lanes run x/11 · effort <level>
+findings: N (critical X / important Y / nitpick Z) · lanes run x/11
 ```
 
 ## Output modes

@@ -7,7 +7,7 @@ reason — a skipped lane never fails the run.
 
 ## Lane: correctness
 
-Trigger: always, at every effort.
+Trigger: always.
 Skip when: never.
 
 A finding in this lane IS a defect the diff introduces: wrong output for a concrete
@@ -19,8 +19,9 @@ or sequence for each.
 
 ## Lane: standards
 
-Trigger: effort medium or high.
-Skip when: no CLAUDE.md/AGENTS.md or convention docs found and effort is medium.
+Trigger: always.
+Skip when: never — with no CLAUDE.md/AGENTS.md or convention docs, run the smell list
+and reuse audit only.
 
 A finding in this lane IS a changed line that breaks a rule the repo documents — cite
 the file and the rule's wording — or matches one of the smells below. Two rules bind the
@@ -52,7 +53,7 @@ justified as "no existing helper or definition covers this."
 
 ## Lane: spec-fidelity
 
-Trigger: effort high, and a spec source was discovered (ticket, plan file, PR body).
+Trigger: a spec source was discovered (ticket, plan file, PR body).
 Skip when: no spec source found → Coverage: "spec fidelity — skipped, no spec discovered".
 
 A finding in this lane IS one of: (a) a spec requirement absent or partial in the diff,
@@ -61,7 +62,7 @@ implemented but wrong. Quote the spec line for every finding.
 
 ## Lane: past-pr-comments
 
-Trigger: effort high, and `gh` can list prior PRs touching the changed files.
+Trigger: `gh` can list prior PRs touching the changed files.
 Skip when: not a GitHub-backed repo, or `gh` unauthenticated.
 
 A finding in this lane IS review feedback from a prior PR on these files that this diff

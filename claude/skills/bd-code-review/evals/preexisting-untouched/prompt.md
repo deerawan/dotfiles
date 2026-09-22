@@ -13,6 +13,6 @@ then review it:
 2. `git checkout -b feature-currency-format`, overwrite with `fixture/head/` (it only adds
    formatCurrency and its test; pricing.js is untouched), commit as
    "add currency formatting with tests".
-3. Run /bd-code-review master medium in that repo.
+3. Run /bd-code-review master in that repo.
 
 Show me the review report.

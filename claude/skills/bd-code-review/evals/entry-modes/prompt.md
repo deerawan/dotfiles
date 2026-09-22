@@ -13,8 +13,8 @@ Set up a scratch repo from this eval's fixture directory (`fixture/` next to thi
 
 Then, in that repo:
 
-3. First run /bd-code-review no-such-ref low — I want to see how it handles a ref that
+3. First run /bd-code-review no-such-ref — I want to see how it handles a ref that
    doesn't exist.
-4. Then run /bd-code-review master low, invoked as if from another skill (programmatic):
+4. Then run /bd-code-review master, invoked as if from another skill (programmatic):
    I need the machine-readable verdict block at the end, since a calling agent will gate
    on it.

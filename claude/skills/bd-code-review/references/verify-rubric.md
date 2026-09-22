@@ -82,12 +82,10 @@ Score each verified finding 0–100:
 - **100** — Absolutely certain. Double-checked, definitely real, will happen frequently;
   the evidence directly confirms it.
 
-## Thresholds
+## Threshold
 
-| Effort | Reported |
-|---|---|
-| low, medium | score ≥ 80 |
-| high | score ≥ 60; findings below 80 display their confidence in the report |
+Report every finding scoring ≥ 60; findings below 80 display their confidence in the
+report.
 
 Return the batch as: `score | severity | action | file:line | one-line summary | citation`,
 one line per surviving finding, nothing else.

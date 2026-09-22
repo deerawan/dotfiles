@@ -11,6 +11,6 @@ then review it:
 1. Copy `fixture/base/` into a fresh temp directory, `git init -b master`, commit as "base".
 2. `git checkout -b feature-bulk-pricing`, overwrite with `fixture/head/`, commit as
    "add bulk pricing rates support".
-3. Run /bd-code-review master medium in that repo.
+3. Run /bd-code-review master in that repo.
 
 Show me the review report.
