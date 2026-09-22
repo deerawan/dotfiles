@@ -1,7 +1,7 @@
 ---
 name: bd-code-review
 description: Multi-lane adversarial code review with a verification gate — reviews a PR, branch, or working tree against correctness, the originating spec/ticket, repo standards, and (for UI changes with a Figma link) design fidelity, reporting only verified findings by severity. Use when asked to review code, a PR, a branch, or a diff, or as a post-implementation checkpoint from another skill. Triggers on "review this PR", "review my changes", "bd-code-review". Not for reviewing plans or specs — that is plan-review. Not for replying to existing PR feedback — that is babysit-pr.
-argument-hint: "[PR number/URL, ref, or blank for working tree] [yolo] [fix]"
+argument-hint: "[PR number/URL, ref, or blank for working tree] [incremental] [yolo] [fix]"
 ---
 
 # bd-code-review
@@ -12,8 +12,8 @@ verifiers are fresh subagents — never this session's context. Unrecognized tok
 note and ignore.
 
 ```text
-scope → context pack → roster → parallel lanes → per-lane verifier
-                                                                     ↓
+scope → context pack → roster → parallel lanes → per-lane verifier → merge dupes
+                                                                          ↓
                         report (default) | comment (gated) | fix | verdict block
 ```
 
@@ -24,7 +24,7 @@ scope → context pack → roster → parallel lanes → per-lane verifier
 | PR number/URL | `gh pr view` (title, body, author) + `gh pr diff` |
 | Bare ref/branch | `git diff <ref>...HEAD` (three-dot, merge-base) |
 | No target | working tree + branch: `git diff $(git merge-base origin/<default> HEAD)` |
-| Programmatic (another skill passed SHAs) | `git diff <base>...<head>`; caller may pass a spec/plan path |
+| Programmatic (another skill passed SHAs) | `git diff <base>...<head>`; caller may pass a spec/plan path and `incremental` |
 
 Before any agent spawns: the ref must resolve (`git rev-parse`), the diff must be
 non-empty, and a PR target must be open and not draft. Fail here with the bad ref or
@@ -82,7 +82,17 @@ Apply the threshold from the rubric (score ≥ 60; findings below 80 show their
 confidence). A lane with zero findings needs no verifier. Findings that die here are
 gone — they never appear in any output mode.
 
-## Step 6: Report
+## Step 6: Merge duplicates
+
+Verifier survivors from different lanes can name the **same defect** — a swallowed error
+caught by both `correctness` and `silent-failure`, a magic value flagged by both
+`standards` and `type-design`. Collapse any two survivors that share a `file:line` (or an
+overlapping range) **and** the same root cause into one finding: keep the higher severity
+and the clearer framing, display it in the owning lane's section, and tag the other
+contributing lane(s) on it. This is **not** the cross-lane re-ranking the Never list
+forbids — two survivors on the same line describing *different* problems stay separate.
+
+## Step 7: Report
 
 Assign each survivor a severity — **Critical** (must fix: verified defect, security
 hole, data loss, spec violation) / **Important** (should fix before merge, or
@@ -103,7 +113,7 @@ must not hide behind a standards pass. Report skeleton:
 | Lane | Ran? | Why |            ← every lane, ran or skipped-with-reason
 
 ## <Lane name>                    ← one section per lane that ran, findings numbered
-N. **[<Severity>, <action>, <confidence>]** <summary>
+N. **[<Severity>, <action>, <confidence>]** <summary>   ← append "(also: <lane>)" if merged
    `file:line` — <why it matters, one or two sentences>
    Fix: <if not obvious; for ask-user, name what authorizing the remedy would add>
 
@@ -135,7 +145,9 @@ immediately and show what was posted. Post via
 **`fix`** — apply Critical and Important findings marked **`auto-fix`** to the working
 tree; Nitpicks stay report-only. **Never auto-apply an `ask-user` finding**, whatever its
 severity — surface each with what authorizing its remedy would add, and let the author
-decide. Commit only if asked; **never push**.
+decide. After applying, run the project's test command (discover it from the repo; if none
+is found, note that and skip the guard) — revert any applied hunk that turns the suite red
+and report that finding as still-open. Commit only if asked; **never push**.
 
 **Programmatic** (invoked by another skill/agent) — end with this block so the caller
 can gate on it:
@@ -148,6 +160,29 @@ nitpick: <n>
 findings:
   - <severity> | <action> | <lane> | <file:line> | <one-line summary>
 ```
+
+## Incremental review — `incremental`
+
+Re-reviewing the same target after new commits: review only what moved, carry the rest.
+
+Cache: `~/.claude/bd-code-review/<owner>-<repo>.json` (user-level, shared across
+worktrees), one entry per target keyed by PR number or branch name, holding `base_sha`,
+`head_sha`, `verdict`, and the reported `findings` (severity, action, lane, file:line,
+summary). **Every run — incremental or not — rewrites its target's entry at the end**, so
+the next incremental run has a baseline.
+
+With the `incremental` token, after Step 1 resolves the current head and merge-base:
+- **No entry, or the merge-base moved (rebase)** → full review; Coverage notes
+  "incremental: full — no prior review" / "base moved".
+- **Entry present, same base** → lanes read only the delta,
+  `git diff <cached head_sha>...<current head>`. Prior findings on files the delta does
+  **not** touch carry forward verbatim (code unchanged ⇒ still open). Prior findings on
+  files the delta **does** touch are dropped — the fresh pass re-derives them, so a fix
+  clears one and an unaddressed one returns.
+
+Report over the union of carried-forward and fresh findings, then Steps 6–7 as normal; the
+verdict is recomputed across the whole union, never just the delta. Mark carried-forward
+findings `↩︎ unchanged since <date>`. Without the token, every run is a full review.
 
 ## Never
 
