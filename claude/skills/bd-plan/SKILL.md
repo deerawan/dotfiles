@@ -2,6 +2,7 @@
 name: bd-plan
 description: Create a grounded, depth-gated implementation plan with dependency-ordered tasks, derived acceptance truths, and a proposed-code sketch under each task.
 argument-hint: "[feature description, spec/ticket ref, or existing plan path] [--no-code]"
+model: claude-fable-5-1
 ---
 
 # bd-plan
