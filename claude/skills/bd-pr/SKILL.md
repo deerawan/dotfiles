@@ -131,6 +131,29 @@ The cap is on volume, not placement:
 
 Never move a demo/screenshot section the user added by hand out of the body, and never replace their screenshots with your own description of them.
 
+### Attaching via gh CLI
+
+`gh pr create` and `gh pr edit` upload images and videos with `--attach` and place them in the body. Never post an artifact as a standalone `gh pr comment` — that's the default failure mode, and it strands the evidence where a reviewer misses it. (A comment is only for the overflow cases above: full galleries, per-state sets, raw browser-test runs.)
+
+To land an artifact in the right section rather than appended at the end, reference it there first, then attach it. gh rewrites a body reference that matches an attached path — `![alt](./local.png)` becomes the uploaded CDN URL, in place. An attached file the body doesn't reference gets appended to the end instead, which is what puts artifacts in the wrong place.
+
+1. Write the reference into the matching heading in your body file:
+
+   ```markdown
+   ## Screenshots
+   ![Order list scoped to the buyer](./recordings/order-list.png)
+   ```
+
+2. Attach the same local path when you post the body:
+
+   ```bash
+   gh pr edit --body-file body.md --attach './recordings/order-list.png#Order list scoped to the buyer'
+   ```
+
+Alt text follows the path after `#`. Video renders as a player and takes no alt text — reference it the same way (`![demo](./recordings/demo.webm)`) and attach `./recordings/demo.webm`. Up to 50 files per command.
+
+When the PR is already open, follow **Updating an existing body**: fetch the live body, splice the `![]()` reference under the existing heading, then `gh pr edit` with `--body-file` and `--attach`. Don't re-attach an artifact the body already shows.
+
 ## Updating an existing body
 
 If the PR is already open, never blindly overwrite its body — the human may have edited it by hand since you last saw it. Always fetch the live body from the remote first, compare it against what you have, and splice your edit into the fetched version:
