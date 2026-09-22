@@ -2,6 +2,7 @@
 name: bd-execute
 description: Use when a bd-plan plan is already approved and the user wants a phase implemented — as a parallel crew or solo in the current session, operator's choice at the dispatch gate. Never for planning. Triggers on "bd-execute", "execute the plan as a crew", "run phase N of the plan", "implement the plan in parallel worktrees/tabs".
 argument-hint: "[plan file path or topic] [--phase N] [--cap N] [--step] [--yolo] [--checkpoint]"
+model: claude-opus-4-8
 ---
 
 # bd-execute — executor for bd-plan phases
