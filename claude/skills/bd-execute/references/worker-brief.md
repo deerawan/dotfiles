@@ -43,44 +43,18 @@ test scenarios, verification, files, proposed code}
      using the repo's own test command
    - the repo's compile/typecheck gate, if it has one
    Evidence, not impressions: any red result means you are not done.
-4. Self-review the full diff: `git diff {parent}...HEAD` — scope creep, YAGNI, leftover debug.
-5. Review the diff with `/pr-review-toolkit:review-pr` — the toolkit fans out the specialist
-   reviewers that apply to what you changed (code-reviewer always, plus silent-failure-hunter,
-   type-design-analyzer, pr-test-analyzer, comment-analyzer as the diff warrants). It analyses
-   the working diff by default, so run it before you commit. Fix every Critical and Important
-   finding it confirms; collect the suggestions and minor ones for your status file. (Skip only
-   if the skill is unavailable in your session, and say so in your status file.)
-6. **Domain testing** — check your session's available agents and skills for any tester
-   whose domain matches what you changed. If one matches, dispatch it against your change;
-   if it reports failures, fix and re-run. Save its FULL structured report to
-   `{run-dir}/task-{task-id}.testing.md` — verbatim, never summarised, so the lead and the
-   human can read the real thing. If none matches, write that fact in the file instead.
-   Never fabricate a report. **The full report does not go in the PR body** (see next step).
-7. Write your PR body to `{run-dir}/task-{task-id}.pr.md`. This file IS the PR body; nothing
-   else fills it.
-   - **Invoke the `bd-pr` skill first** and follow its budget. If it isn't available in
-     your session, apply this: a PR body is a decision aid, not a work log —
-     ~150–300 words for a normal task, and **always shorter than the diff it describes**.
-     Count it (`wc -w`) before you finish; don't estimate.
-   - Fill the repo's template at `{pr-template-path}` (if the lead marked it "none", write
-     Problem / Solution / Acceptance Criteria / Testing). **Copy the template's structure
-     faithfully — every heading in its original order, and every HTML comment marker
-     verbatim**, including ones that look like empty placeholders: CI can inject content into
-     those markers, and dropping them silently breaks it.
-   - **Testing section: results, not transcripts.** One line per check — what you ran and
-     that it passed. The full tester report lives in `task-{task-id}.testing.md`; reference
-     it, don't paste it.
-   - **Never in a PR body:** command output or logs, test-run transcripts, a narration of
-     your commits or of what you tried first, restatements of the diff, or the plan task
-     pasted back. The reviewer has the diff; they need why it exists and what could go wrong.
-   - If `{parent}` is not `main`, add the line:
-     `Stacked on \`{parent}\`; re-target to main once that merges.`
-8. Commit on `{branch}` with a descriptive message. Do NOT push. Do NOT create a PR. Do NOT
+4. **Finish steps** — follow `~/.claude/skills/bd-execute/references/finish-steps.md` (self-review,
+   code review, domain testing, PR body) with: `<base>` = `{parent}`, `<proof-dir>` = `{run-dir}`,
+   `<id>` = `{task-id}`, `<pr-template>` = `{pr-template-path}`, `<escalate>` = mark yourself
+   `blocked` with it and tell the lead. Read it now; it is part of this order.
+5. Commit on `{branch}` with a descriptive message. Do NOT push. Do NOT create a PR. Do NOT
    run stax submit — the lead submits the whole stack.
 
 ## Reporting protocol (mandatory)
 
-- Status file is the source of truth. Mark yourself done:
+- Status file is the source of truth. `write-status.sh ... done` refuses until
+  `task-{task-id}.review.md`, `task-{task-id}.testing.md` and `task-{task-id}.pr.md` (Demo section
+  filled) exist — the refusal names what's missing. Mark yourself done:
   `~/.claude/skills/bd-execute/scripts/write-status.sh {run-dir} {task-id} done --branch {branch} --minor "<finding>" ...`
 - Then notify the lead (push notification into the lead's session — address agents by NAME,
   never by pane id, which goes stale when the layout changes):

@@ -36,6 +36,12 @@ command -v stax  >/dev/null || { echo "stax not found"  >&2; exit 1; }
 command -v herdr >/dev/null || { echo "herdr not found" >&2; exit 1; }
 command -v jq    >/dev/null || { echo "jq not found"    >&2; exit 1; }
 [[ -f "$brief_file" ]] || { echo "brief file missing: $brief_file (write it before spawning)" >&2; exit 1; }
+for heading in '## How to work' '## Reporting protocol (mandatory)' '## Never'; do
+  grep -qxF "$heading" "$brief_file" || { echo "brief missing '$heading': write it from references/worker-brief.md" >&2; exit 1; }
+done
+grep -qF 'references/finish-steps.md' "$brief_file" || { echo "brief missing the finish-steps.md step: write it from references/worker-brief.md" >&2; exit 1; }
+unfilled="$(grep -oE '\{(branch|lead-name|parent|plan-path|pr-template-path|repo-root|run-dir|run-slug|task-id)\}' "$brief_file" | sort -u | tr '\n' ' ' || true)"
+[[ -z "$unfilled" ]] || { echo "brief has unfilled placeholders: $unfilled" >&2; exit 1; }
 
 cd "$repo_root"
 
@@ -73,9 +79,9 @@ fi
 
 # --add-dir makes the run dir a working directory for the crewmate, so reading its brief and
 # writing status/pr.md files there never hits a permission prompt (the structural stall:
-# the brief lives outside the worktree).
-agent_args=(--permission-mode auto --add-dir "$run_dir")
-[[ "$yolo" == "1" ]] && agent_args=(--dangerously-skip-permissions --add-dir "$run_dir")
+# the brief lives outside the worktree). The skill dir is added so it can read finish-steps.md.
+agent_args=(--permission-mode auto --add-dir "$run_dir" --add-dir "$HOME/.claude/skills/bd-execute")
+[[ "$yolo" == "1" ]] && agent_args=(--dangerously-skip-permissions --add-dir "$run_dir" --add-dir "$HOME/.claude/skills/bd-execute")
 
 # The tab's pane needs a moment to reach an interactive shell prompt; starting the agent
 # too early fails with agent_pane_busy. Retry on that error only.

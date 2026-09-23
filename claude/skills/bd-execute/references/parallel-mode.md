@@ -316,17 +316,19 @@ files — never from memory.
 ```markdown
 **Status — <run-slug>, phase <N>** (merge bottom-up)
 
-| Task | PR | State | Review |
-|---|---|---|---|
-| 1 — search index view | [#12260](https://github.com/<owner>/<repo>/pull/12260) | Draft | Review required |
-| 0b — Lambda switch | [#12258](https://github.com/<owner>/<repo>/pull/12258) | Merged | ✅ Approved |
-| 5 — GraphQL contract | [#12259](https://github.com/<owner>/<repo>/pull/12259) | Active | Changes requested |
-| 3 — domain model | — | Not submitted | — |
+| Task | Code review | Testing | PR body | PR | State | Review |
+|---|---|---|---|---|---|---|
+| 1 — search index view | ✅ | ✅ | ✅ | [#12260](https://github.com/<owner>/<repo>/pull/12260) | Draft | Review required |
+| 0b — Lambda switch | ✅ | ✅ | ✅ | [#12258](https://github.com/<owner>/<repo>/pull/12258) | Merged | ✅ Approved |
+| 5 — GraphQL contract | ✅ | ✅ | ✅ | [#12259](https://github.com/<owner>/<repo>/pull/12259) | Active | Changes requested |
+| 3 — domain model | ❌ | ❌ | ❌ | — | Not submitted | — |
 ```
 
 - **Order:** bottom-up by stack position, so the top row is what merges next — not task-number
   order.
 - **Task:** `<task no> — <short description>` from the plan's task title.
+- **Code review / Testing / PR body:** ✅ or ❌ from the `review:` `testing:` `pr:` fields of
+  `crew-status.sh`. A ❌ on a `done` task means it was marked done outside `write-status.sh`; send it back.
 - **PR:** always a clickable `[#num](url)`; `—` when nothing is open yet.
 - **State:** `Draft` / `Active` / `Merged` / `Not submitted` — from
   `gh pr view <branch> --json isDraft,state`.

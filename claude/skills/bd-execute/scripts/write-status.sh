@@ -17,6 +17,20 @@ done
 
 case "$state" in pending|running|done|blocked) ;; *) echo "invalid state: $state" >&2; exit 2;; esac
 
+if [[ "$state" == "done" ]]; then
+  source "$(dirname "$0")/gates.sh"
+  gates="$(gate_results "$run_dir" "$task_id")"
+  if [[ "$gates" == *missing* || "$gates" == *no-demo* ]]; then
+    cat >&2 <<MSG
+refusing done for $task_id: $gates
+  review  -> bd-code-review verdict block (approve or approve-with-fixes) in $run_dir/task-$task_id.review.md
+  testing -> domain tester report, or "no matching tester", in $run_dir/task-$task_id.testing.md
+  pr      -> PR body via bd-pr in $run_dir/task-$task_id.pr.md, Demo/Screenshots section not empty
+MSG
+    exit 3
+  fi
+fi
+
 mkdir -p "$run_dir"
 f="$run_dir/task-$task_id.status"
 tmp="$(mktemp "$run_dir/.task-$task_id.XXXXXX")"
