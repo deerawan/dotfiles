@@ -18,7 +18,7 @@ This applies to **Problem, Solution, Acceptance Criteria and Testing**. Demo and
 Write those sections for a competent engineer who has none of your context: they weren't in the ticket, haven't read the design doc, and don't know what you tried first.
 
 - **One idea per sentence.** If a sentence has two clauses joined by "and" or a semicolon, it's usually two sentences.
-- **Concrete over abstract.** "The view returns every seller's rows" beats "seller scoping is delegated to the repository layer." Say the thing that happens, not the architectural category it belongs to.
+- **Concrete over abstract.** "The view returns every customer's rows" beats "tenant scoping is delegated to the repository layer." Say the thing that happens, not the architectural category it belongs to.
 - **Expand or link the first use** of any acronym, internal term, role name or table name a reviewer outside your squad wouldn't know.
 - **Say what breaks if this is wrong**, in terms of what a person would see, not what a system would do. "A customer sees an order that was deleted" beats "a missed predicate degrades data integrity."
 - **No hedging chains.** "It should generally be the case that" is "usually".
@@ -69,7 +69,7 @@ Use it as the exact base for the body: keep its headings and their order, and ma
 ## Shape
 
 1. **Problem**, two sentences. Why this change exists.
-2. **Solution**, three to five sentences. What changed and why, not how. The reviewer can read how.
+2. **Solution**, three to five sentences. What changed and why, not how. The reviewer can read how. No paragraph runs past three sentences: when Solution needs more, write a one-sentence lead, then one bullet per distinct fact (query, auth, UI, what's deliberately not done).
 3. **Acceptance Criteria** and **Testing**, one line per checkbox. Never a paragraph inside a checkbox.
 4. **Resources**: ticket, design doc, dependent PRs. Link the published design doc, not a local `*.md` path.
 5. **Demo/Screenshots** (use whatever heading the repo's template uses), in the body, not a comment. See below. If there's no user-visible change, one line saying so.
@@ -88,20 +88,31 @@ Trivial:
 
 Normal:
 
-> **Problem:** The order analytics view groups by `order.company_id`, which is the seller, so buyer dashboards double-count orders that span two buyers.
+> **Problem:** The sales report groups by `order.created_by`, which is the staff member, so team totals double-count orders that were reassigned.
 >
-> **Solution:** Groups by the buyer id from the joined order instead and extends the composite index to cover it. No API change; the resolver already passes the buyer through.
+> **Solution:** Groups by `order.owner_id` instead and extends the composite index to cover it. No API change; the endpoint already returns the owner.
+
+Risky, spans several layers (query to UI): lead sentence, then bullets, risk first. The same content as one paragraph is a wall a reviewer skims past, and the risk gets lost in the middle.
+
+> **Problem:** The store dashboard has no metric cards yet. This is the first single-value card, and the others will copy its pattern.
+>
+> **Solution:** Adds a refund count for the last 30 days, from repository query to a card on the dashboard's Orders panel.
+>
+> - The `order_stats` view bypasses row-level security, so tenant isolation depends on the query adding a `tenant_id` filter. Get it wrong and one store sees another store's refunds. A test on the rendered SQL covers single-tenant and admin callers.
+> - Counts orders with status REFUNDED and `updated_at` inside the caller's window.
+> - Goes through the existing permission check and returns a plain integer, with no currency.
+> - Doesn't re-filter soft-deleted rows. The view already does.
 
 Restructure (many files moved): keep the prose to why, and put the moves in a table.
 
 > **Problem:** GraphQL resolver files sit in three folders, so every new resolver touches all three.
 >
-> **Solution:** Consolidates them under `applications/graphql/`. Imports updated, no logic changes.
+> **Solution:** Consolidates them under `src/graphql/`. Imports updated, no logic changes.
 >
 > | Before | After |
 > | --- | --- |
-> | `applications/api/resolvers/` | `applications/graphql/resolvers/` |
-> | `applications/api/schema/` | `applications/graphql/schema/` |
+> | `src/api/resolvers/` | `src/graphql/resolvers/` |
+> | `src/api/schema/` | `src/graphql/schema/` |
 
 ## Where everything else goes
 
@@ -141,13 +152,13 @@ To land an artifact in the right section rather than appended at the end, refere
 
    ```markdown
    ## Screenshots
-   ![Order list scoped to the buyer](./recordings/order-list.png)
+   ![Order list filtered by owner](./recordings/order-list.png)
    ```
 
 2. Attach the same local path when you post the body:
 
    ```bash
-   gh pr edit --body-file body.md --attach './recordings/order-list.png#Order list scoped to the buyer'
+   gh pr edit --body-file body.md --attach './recordings/order-list.png#Order list filtered by owner'
    ```
 
 Alt text follows the path after `#`. Video renders as a player and takes no alt text — reference it the same way (`![demo](./recordings/demo.webm)`) and attach `./recordings/demo.webm`. Up to 50 files per command.
@@ -190,6 +201,7 @@ These patterns force the reviewer to reverse-engineer the PR, and each is a reas
 - Is every acronym, role name and table name expanded or linked on first use?
 - Is the body shorter than the diff?
 - Can a reviewer find the one risky thing in five seconds without scrolling?
+- Does any paragraph run past three sentences? Break it into a lead plus bullets.
 - Is anything here a record of what I did rather than what a reviewer needs?
 - Does any fact appear twice? Keep the copy closest to the code.
 
