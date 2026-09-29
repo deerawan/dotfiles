@@ -37,6 +37,6 @@ instead of improvising.
 ## Before reporting done
 
 - [ ] Every selected task implemented on the one branch, each past its verification gate
-- [ ] `gates.sh` printed `review:ok testing:ok pr:ok`
+- [ ] `gates.sh` printed `review:ok verify:ok testing:ok|skipped pr:ok`
 - [ ] One draft PR open from `task-solo.pr.md`; plan annotated (Branch/PR + Revision History);
       `/babysit-pr` started

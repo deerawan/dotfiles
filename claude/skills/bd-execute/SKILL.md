@@ -1,6 +1,6 @@
 ---
 name: bd-execute
-description: Use when a bd-plan plan is already approved and the user wants a phase implemented — as a parallel crew or solo in the current session, operator's choice at the dispatch gate. Never for planning. Triggers on "bd-execute", "execute the plan as a crew", "run phase N of the plan", "implement the plan in parallel worktrees/tabs".
+description: Use when a bd-plan plan is already approved and the user wants a phase implemented — as a parallel crew or solo in the current session, operator's choice at the dispatch gate — or to report on a running crew. Never for planning. Triggers on "bd-execute", "execute the plan as a crew", "run phase N of the plan", "implement the plan in parallel worktrees/tabs", "crew status".
 argument-hint: "[plan file path or topic] [--phase N] [--cap N] [--step] [--yolo] [--checkpoint]"
 model: claude-opus-4-8
 ---
@@ -46,6 +46,11 @@ bd-ticket: glob, ask on multiple hits, list 5 most recent if empty).
 | `--step` | (parallel) Human-stepped waves: pause after each wave settles and confirm before dispatching the next (recommended for a plan's first crew run) |
 | `--yolo` | (parallel) Start crewmates with `--dangerously-skip-permissions` instead of the default `--permission-mode auto`. Only when the user explicitly passes it |
 | `--checkpoint` | (parallel) Write `CHECKPOINT.md` for the in-flight run and stop. Spawns nothing, changes nothing else — use before clearing context (see [references/checkpoint-resume.md](references/checkpoint-resume.md)) |
+
+**"crew status" (or "status" with no plan named) skips every step below:** run
+`~/.claude/skills/bd-execute/scripts/crew-report.sh` and print its output verbatim. Exit 2
+means several runs exist — ask which, then pass that run dir. Then handle any 🔁 row per
+[references/parallel-mode.md](references/parallel-mode.md) *Retiring a merged lane*.
 
 Unrecognized `--` tokens: note and ignore. `--checkpoint` skips the run entirely: resolve the
 run dir, write the checkpoint, report the path.

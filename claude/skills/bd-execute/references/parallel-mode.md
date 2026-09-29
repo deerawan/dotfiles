@@ -35,6 +35,7 @@ needs:
 ├── task-<id>.brief.md        ← each crewmate's order
 ├── task-<id>.inbox/          ← lead→crewmate steers: NNN.msg + handled/ (mv = ack)
 ├── task-<id>.status          ← each crewmate's ground truth
+├── task-<id>.verify.md       ← unit/lint/typecheck results, one "<check>: pass|fail — <command>" per line
 ├── task-<id>.pr.md           ← each crewmate's PR body; one-shot, dead once posted (Step 7.2)
 └── task-<id>.testing.md      ← full tester report, verbatim; kept OUT of the PR body
 ```
@@ -109,7 +110,7 @@ Two channels, and the status file always wins:
   `gh`/`git`) before acting.
 - **Poll:** wait with a Monitor until-loop, every 60s:
   `~/.claude/skills/bd-execute/scripts/crew-status.sh <run-dir> <id...>` — exit 0 = wave
-  settled. Each line is `id file-state herdr-state inbox:<unhandled>`.
+  settled. Each line is `id file-state herdr-state inbox:<unhandled>` plus the gate fields.
 
 **Steering inbox — every message you send a crewmate goes through it, never inline in a
 herdr prompt.** Content in a prompt is gone if delivery fails; a file is not:
@@ -309,32 +310,21 @@ in a fresh session with lanes still around, run this procedure over `crew.json` 
 
 ## Status report — on demand
 
-Whenever the user says "status" (or asks how the run is going), answer with this table and
-nothing else unless they asked for more. Read it fresh from `gh` + the phase file + status
-files — never from memory.
+Whenever the user says "status" or "crew status" (or asks how the run is going), run
+`~/.claude/skills/bd-execute/scripts/crew-report.sh <run-dir>` and print its output verbatim
+— nothing else unless they asked for more. It reads the phase file, status files, proof
+files, `crew.json`, `gh` and herdr fresh, so never rebuild the table from memory.
 
-```markdown
-**Status — <run-slug>, phase <N>** (merge bottom-up)
-
-| Task | Code review | Testing | PR body | PR | State | Review |
-|---|---|---|---|---|---|---|
-| 1 — search index view | ✅ | ✅ | ✅ | [#12260](https://github.com/<owner>/<repo>/pull/12260) | Draft | Review required |
-| 0b — Lambda switch | ✅ | ✅ | ✅ | [#12258](https://github.com/<owner>/<repo>/pull/12258) | Merged | ✅ Approved |
-| 5 — GraphQL contract | ✅ | ✅ | ✅ | [#12259](https://github.com/<owner>/<repo>/pull/12259) | Active | Changes requested |
-| 3 — domain model | ❌ | ❌ | ❌ | — | Not submitted | — |
-```
-
-- **Order:** bottom-up by stack position, so the top row is what merges next — not task-number
-  order.
-- **Task:** `<task no> — <short description>` from the plan's task title.
-- **Code review / Testing / PR body:** ✅ or ❌ from the `review:` `testing:` `pr:` fields of
-  `crew-status.sh`. A ❌ on a `done` task means it was marked done outside `write-status.sh`; send it back.
-- **PR:** always a clickable `[#num](url)`; `—` when nothing is open yet.
-- **State:** `Draft` / `Active` / `Merged` / `Not submitted` — from
-  `gh pr view <branch> --json isDraft,state`.
-- **Review:** `✅ Approved` / `Changes requested` / `Review required` — from `reviewDecision`.
-- Add a line under the table only when there is something to say: blocked tasks with their
-  note, stuck tasks with their state and age.
+- **Order:** bottom-up by stack position — the top row merges next.
+- **Review / Verify / Tester / PR body:** from `task-<id>.review.md`, `.verify.md`,
+  `.testing.md`, `.pr.md`. Tester ⏭️ = no matching tester; PR body ⚠️ = Demo section empty.
+- **PR state / Approval:** from `gh pr view <branch>`.
+- **Footer** only when there's something to say: 🟥 blocked or stuck (running ≥
+  `STUCK_MINUTES`, default 30, with the agent idle or gone), ⏭️ skipped tester, ❌ done with a
+  failed gate (marked done outside `write-status.sh` — send it back), 🔁 merged lane still in
+  `crew.json`.
+- No run-dir arg: it uses the only run under `~/.claude/bd-execute/`; with several it lists
+  them and exits 2 — ask which.
 
 **Every `Merged` row triggers the retirement question** — run *Retiring a merged lane*
 (above) over the merged rows.

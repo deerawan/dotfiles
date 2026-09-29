@@ -41,10 +41,10 @@ test scenarios, verification, files, proposed code}
    - the task's own `Verification:` command, exactly as written in the task
    - the full test suite for every package/module you touched (not just your new tests),
      using the repo's own test command
-   - the repo's compile/typecheck gate, if it has one
+   - the repo's compile/typecheck gate and lint, if it has them
    Evidence, not impressions: any red result means you are not done.
 4. **Finish steps** — follow `~/.claude/skills/bd-execute/references/finish-steps.md` (self-review,
-   code review, domain testing, PR body) with: `<base>` = `{parent}`, `<proof-dir>` = `{run-dir}`,
+   code review, verification record, domain testing, PR body) with: `<base>` = `{parent}`, `<proof-dir>` = `{run-dir}`,
    `<id>` = `{task-id}`, `<pr-template>` = `{pr-template-path}`, `<escalate>` = mark yourself
    `blocked` with it and tell the lead. Read it now; it is part of this order.
 5. Commit on `{branch}` with a descriptive message. Do NOT push. Do NOT create a PR. Do NOT
@@ -53,8 +53,8 @@ test scenarios, verification, files, proposed code}
 ## Reporting protocol (mandatory)
 
 - Status file is the source of truth. `write-status.sh ... done` refuses until
-  `task-{task-id}.review.md`, `task-{task-id}.testing.md` and `task-{task-id}.pr.md` (Demo section
-  filled) exist — the refusal names what's missing. Mark yourself done:
+  `task-{task-id}.review.md`, `task-{task-id}.verify.md` (no failing check),
+  `task-{task-id}.testing.md` and `task-{task-id}.pr.md` (Demo section filled) exist — the refusal names what's missing. Mark yourself done:
   `~/.claude/skills/bd-execute/scripts/write-status.sh {run-dir} {task-id} done --branch {branch} --minor "<finding>" ...`
 - Then notify the lead (push notification into the lead's session — address agents by NAME,
   never by pane id, which goes stale when the layout changes):

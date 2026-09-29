@@ -18,13 +18,19 @@ checks them, and in crew mode `write-status.sh done` refuses without them.
    is not `request-changes`. A Critical or Important `ask-user` finding is not yours to decide:
    <escalate>. Save the final run's `bd-code-review-verdict` block to
    `<proof-dir>/task-<id>.review.md`, verbatim. Keep the Nitpicks for your report.
-3. **Domain testing** — check your session's available agents and skills for any tester
+3. **Record verification** — review fixes changed the code, so re-run the verification gate
+   now (the task's `Verification:` command, the full test suite, lint and typecheck for every
+   package you touched — whichever the repo has). Write one line per check to
+   `<proof-dir>/task-<id>.verify.md`: `<check>: pass — <command>`, e.g.
+   `unit: pass — npm test -w @acme/orders`. A red check is `fail`, then fix and re-run until
+   every line is `pass`. Only write a line for a run you saw finish in this session.
+4. **Domain testing** — check your session's available agents and skills for any tester
    whose domain matches what you changed. If one matches, dispatch it against your change;
    if it reports failures, fix and re-run. Save its FULL structured report to
    `<proof-dir>/task-<id>.testing.md` — verbatim, never summarised, so the human can read the
-   real thing. If none matches, write that fact in the file instead.
+   real thing. If none matches, the file is the single line `no matching tester`.
    Never fabricate a report. **The full report does not go in the PR body** (see next step).
-4. Write your PR body to `<proof-dir>/task-<id>.pr.md`. This file IS the PR body; nothing
+5. Write your PR body to `<proof-dir>/task-<id>.pr.md`. This file IS the PR body; nothing
    else fills it.
    - **Invoke the `bd-pr` skill first** and follow its budget. If it isn't available in
      your session, apply this: a PR body is a decision aid, not a work log —
@@ -46,5 +52,5 @@ checks them, and in crew mode `write-status.sh done` refuses without them.
    - If `<base>` is not `main`, add the line:
      `Stacked on \`<base>\`; re-target to main once that merges.`
 
-Check the gates. Every field must be `ok`:
+Check the gates. Every field must be `ok` (`testing:skipped` is fine when no tester matched):
 `~/.claude/skills/bd-execute/scripts/gates.sh <proof-dir> <id>`
