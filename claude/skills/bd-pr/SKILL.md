@@ -17,13 +17,11 @@ This applies to **Problem, Solution, Acceptance Criteria and Testing**. Demo and
 
 Write those sections for a competent engineer who has none of your context: they weren't in the ticket, haven't read the design doc, and don't know what you tried first.
 
-- **One idea per sentence.** If a sentence has two clauses joined by "and" or a semicolon, it's usually two sentences.
+**Invoke the `bd-technical-writing` skill on those sections before you count the budget.** It owns sentence-level clarity, staying true to the facts, and the AI-tell pass. The rules below are the ones specific to PRs.
+
 - **Concrete over abstract.** "The view returns every customer's rows" beats "tenant scoping is delegated to the repository layer." Say the thing that happens, not the architectural category it belongs to.
 - **Expand or link the first use** of any acronym, internal term, role name or table name a reviewer outside your squad wouldn't know.
 - **Say what breaks if this is wrong**, in terms of what a person would see, not what a system would do. "A customer sees an order that was deleted" beats "a missed predicate degrades data integrity."
-- **No hedging chains.** "It should generally be the case that" is "usually".
-- **Don't make them hold three things at once** to parse one sentence. Nested clauses and back-references ("the former", "as noted above") force a re-read.
-- **Cut the qualifier if the sentence survives it.** Most do.
 - **Prefer a table, list or code block over a paragraph** when it scans faster. Words in a table are cheap to scan; the same words in prose are not.
 - **Keep it factual.** Don't repeat in prose what the Requirements or Testing checkboxes already say.
 
@@ -181,10 +179,6 @@ Never regenerate from scratch, and never edit from a locally cached copy. Preser
 
 If a section has grown past its budget since the last edit, trim it in the same pass.
 
-## Voice
-
-PR descriptions are prose written on the user's behalf, so follow `~/.claude/VOICE.md`. In particular: contractions, short declarative sentences, conclusion first, no em dashes, no bold for emphasis, emoji sparingly.
-
 ## What not to do
 
 These patterns force the reviewer to reverse-engineer the PR, and each is a reason to send it back:
@@ -197,6 +191,7 @@ These patterns force the reviewer to reverse-engineer the PR, and each is a reas
 
 ## Before posting
 
+- Did `bd-technical-writing` run on Problem, Solution, Acceptance Criteria and Testing?
 - Could a reviewer from another squad read Problem and Solution once and say what changed and what could go wrong?
 - Is every acronym, role name and table name expanded or linked on first use?
 - Is the body shorter than the diff?
