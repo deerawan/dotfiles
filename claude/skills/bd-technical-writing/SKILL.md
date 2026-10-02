@@ -94,12 +94,19 @@ Rules from ASD-STE100 Simplified Technical English and Kohl's *The Global Englis
 
 ## Pass 6: Remove AI tells
 
-Run the `humanizer:humanizer` skill in embedded mode on the draft. It finds AI patterns such as em dashes, chatbot phrases, inflated claims, and stock vocabulary. Limit what it may change:
+Read the draft once more and remove each of these. Change only the phrase, not the sentences around it.
 
-- Fix only the patterns it flags. Don't let it merge, reorder, or regroup sentences.
-- Keep these even when it flags them: the **Warning:**, **Caution:**, and **Note:** labels, bold UI labels, numbered steps, conditions before commands, and every hedge that Pass 1 kept.
+- **Chatbot framing.** Openers and sign-offs such as "Great question", "Let's dive in", "Here's what you need to know", and "I hope this helps".
+- **Inflated claims.** "Robust", "seamless", "powerful", "pivotal", "game-changing", "blazingly fast". Give the measured fact, or cut the word.
+- **Fake contrast.** "Not just X, it's Y" and "It isn't X, it's Y". State Y, but only if Y is a fact a reader can check. If Y is a pitch, such as "an end-to-end system", cut the sentence.
+- **Forced threes.** A list padded to three items. Use the real number.
+- **Empty "-ing" tails.** ", ensuring...", ", highlighting...", ", empowering...". Cut the tail, or make it a sentence with a real subject.
+- **Label-and-colon bullets.** "**Speed:** Deploys are fast." Write the fact as a plain sentence or a plain bullet. This rule does not cover the **Warning:**, **Caution:**, and **Note:** labels from Pass 5.
+- **Decoration.** Emoji, Title Case Headings, bold used for emphasis, and exclamation marks.
+- **Abstract metaphors.** "Substrate", "north star", "flywheel", "surface area", "wedge". Write the concrete word.
+- **Over-compression.** Arrows, dropped articles, and fragments such as "Bad input → exit 2, no write". Write the full sentence.
 
-Then check the result against Pass 1 and the sentence limits in Pass 4 again. When the humanizer and this skill disagree, this skill wins. If the humanizer skill is not available, skip this pass and say so.
+Then check the result against Pass 1 and the sentence limits in Pass 4 again.
 
 ## PRs and commits
 

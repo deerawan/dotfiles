@@ -1,6 +1,6 @@
 ---
 name: AI tells removed without breaking structure
-tags: [humanizer-pass]
+tags: [ai-tells]
 runs: 3
 max_turns: 15
 ---
