@@ -163,6 +163,16 @@ Alt text follows the path after `#`. Video renders as a player and takes no alt 
 
 When the PR is already open, follow **Updating an existing body**: fetch the live body, splice the `![]()` reference under the existing heading, then `gh pr edit` with `--body-file` and `--attach`. Don't re-attach an artifact the body already shows.
 
+After posting, check the live body before reporting done. On a private repo a plain `curl` of a `user-attachments` URL returns 404 even when the upload worked, so send the token:
+
+```bash
+gh pr view <n> --json body -q .body | grep -c '](\./'   # must be 0: a leftover local ref is a broken image
+gh pr view <n> --json body -q .body | grep -o 'https://github.com/user-attachments/assets/[^)]*' |
+  while read u; do curl -sL -o /dev/null -w '%{http_code} %{content_type}\n' -H "Authorization: token $(gh auth token)" "$u"; done
+```
+
+Every asset must return `200` with an `image/*` or `video/*` type.
+
 ## Updating an existing body
 
 If the PR is already open, never blindly overwrite its body — the human may have edited it by hand since you last saw it. Always fetch the live body from the remote first, compare it against what you have, and splice your edit into the fetched version:
