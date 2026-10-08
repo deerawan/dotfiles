@@ -43,6 +43,9 @@ checks them, and in crew mode `write-status.sh done` refuses without them.
      those markers, and dropping them silently breaks it.
    - **Demo/Screenshots section** (whatever heading the template uses): screenshots or a
      recording for a UI change, or one line saying there's no user-visible change. Never empty.
+     Reference each file as `![alt](./<name>)`, a bare filename relative to your worktree's
+     `.playwright-cli/recordings/` — the lead posts from that folder with `--attach`, and any
+     other path ships as a broken image.
    - **Testing section: results, not transcripts.** One line per check — what you ran and
      that it passed. The full tester report lives in `task-<id>.testing.md`; reference
      it, don't paste it.

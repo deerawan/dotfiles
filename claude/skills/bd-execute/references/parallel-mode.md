@@ -201,6 +201,11 @@ When no runnable tasks remain in the phase:
    - `0` → `gh pr edit <branch> --body-file <run-dir>/task-<id>.pr.md`. Disk to GitHub;
      nothing passes through you. A task with no `pr.md` gets its body written by you from
      its status file and plan task — never leave a PR with an empty body.
+     If `pr.md` has `](./…)` refs (Demo screenshots/recordings), a bare `--body-file`
+     uploads nothing and every image ships broken. Run the edit from the crewmate's
+     `<worktree>/.playwright-cli/recordings/` and add `--attach ./<file>` for each ref
+     (`grep -o '](\./[^)]*' task-<id>.pr.md`); gh rewrites them to CDN URLs in place.
+     Then run `bd-pr`'s post-attach check.
    - non-zero → **leave it alone.** Already posted on an earlier pass or edited by hand.
      Re-applying `pr.md` is what silently destroys a human's screenshots. If it genuinely
      needs changing, invoke `bd-pr`, which fetches the live body and splices.
