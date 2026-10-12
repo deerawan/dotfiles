@@ -14,7 +14,9 @@ write-back at the end. The crew steps (`parallel-mode.md`) do not apply.
 2. **Implement task by task, in dependency order** (the topological order from SKILL.md Step 2,
    run sequentially — waves don't apply). For EACH task, follow [worker-brief.md](worker-brief.md)
    "How to work" steps 1–3 (guidance chain, test-first, verification gate). The verification
-   gate must be green before the next task starts.
+   gate must be green before the next task starts. Any departure from the plan — a file
+   outside `Files:`, a changed signature, a plan assumption the code disproved — gets an
+   `execute:deviation` row in the decision log as it happens.
 3. **Finish steps**, once, on the whole phase diff: follow [finish-steps.md](finish-steps.md)
    with `<base>` = `origin/<base>`, `<proof-dir>` = `$(git rev-parse --git-dir)/bd-execute`
    (untracked, per worktree), `<id>` = `solo`, `<pr-template>` = the template found in
@@ -27,7 +29,8 @@ write-back at the end. The crew steps (`parallel-mode.md`) do not apply.
 6. **Babysit.** Run `/babysit-pr` on the new PR (or, if unavailable, poll `gh pr checks` and
    fix) until it is green; pause for the human on review feedback that changes intent.
 7. **Report:** the one PR as a clickable link, one line per task on what it delivered, the
-   minor findings, and the babysit state. No stack, no tabs, no lanes to retire.
+   minor findings, the babysit state, and the decision log's one-line summary. No stack, no
+   tabs, no lanes to retire.
 
 Solo mode edits code — that is the point — but it still obeys every **Never** (SKILL.md) that
 isn't crew-specific: no merge, no rebase onto trunk, no force-push to a protected branch, and

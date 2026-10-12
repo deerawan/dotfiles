@@ -1,7 +1,7 @@
 ---
 name: bd-execute
-description: Use when a bd-plan plan is already approved and the user wants a phase implemented — as a parallel crew or solo in the current session, operator's choice at the dispatch gate — or to report on a running crew. Never for planning. Triggers on "bd-execute", "execute the plan as a crew", "run phase N of the plan", "implement the plan in parallel worktrees/tabs", "crew status".
-argument-hint: "[plan file path or topic] [--phase N] [--cap N] [--step] [--yolo] [--checkpoint]"
+description: Use when the user wants a bd-plan phase implemented — as a parallel crew or solo in the current session, operator's choice at the dispatch gate — or to report on a running crew. Given a raw request instead of a plan, it always runs bd-plan first; it never writes the plan itself. Triggers on "bd-execute", "execute the plan as a crew", "run phase N of the plan", "implement the plan in parallel worktrees/tabs", "crew status".
+argument-hint: "[plan file path, topic, or raw request] [--phase N] [--cap N] [--step] [--yolo] [--checkpoint]"
 model: claude-opus-4-8
 ---
 
@@ -36,8 +36,9 @@ you ↔ lead (this session)          ← parallel crew
 
 ## Input
 
-`$1` — plan file path, or a topic to resolve inside `~/.claude/plans/` (same resolution as
-bd-ticket: glob, ask on multiple hits, list 5 most recent if empty).
+`$1` — plan file path, a topic to resolve inside `~/.claude/plans/` (same resolution as
+bd-ticket: glob, ask on multiple hits, list 5 most recent if empty), or a raw request with no
+plan behind it (see Step 0.1).
 
 | Flag | Effect |
 |---|---|
@@ -66,9 +67,20 @@ clickable in a terminal, so it never appears on its own.
 
 ## Step 0: Resolve Plan and Phase
 
+**First, invoke the `bd-decision-log` skill.** Once the plan path is known, open this run
+with an `execute:start` row in its log. Every call you make on the operator's behalf from
+here on — recommendations, answers to crewmates, deviation handling — gets a row as it
+happens.
+
 1. Resolve and read the whole plan. Required: enumerated tasks with dependencies, `Files:`
-   lists, and acceptance criteria. If tasks lack `Files:` or dependencies, **stop** — point at
-   `bd-plan`; don't invent a decomposition.
+   lists, and acceptance criteria. **No plan, or a plan missing that structure → invoke the
+   `bd-plan` skill** with the request (or the unstructured plan) as input, whatever its size —
+   bd-plan's depth gate keeps small work Lightweight, and its grounding is what the crew
+   builds on. bd-plan reviews, autofixes, and saves with no approval prompt. Once it saves to
+   `~/.claude/plans/`, restart Step 0 on that path; the dispatch gate (Step 3) is the
+   operator's first and only approval, so show the plan path, bd-plan's review summary,
+   and the decision log's one-line summary there. Never write the decomposition yourself — no invented `Files:` lists,
+   dependencies, or acceptance criteria.
 2. Identify phases. A flat (Lightweight) plan is one implicit phase. Select the `--phase`
    tasks; skip tasks already executed (a `**PR:**`/`**Branch:**` annotation from a previous
    run, or a settled status file in the run dir).
@@ -155,11 +167,12 @@ Show, for the selected phase:
 
 Recommend a default: **solo** when the phase is one task, or a few tightly-coupled tasks that
 share files or form a clear sequential chain; **parallel** when the tasks are independent and
-worth running at once. The operator's pick is both the mode and the go-ahead.
+worth running at once. The operator's pick is both the mode and the go-ahead. Log the
+recommendation as an `execute:mode` row whose `result` is the operator's pick.
 
 How you gate depends on the harness state noted in Step 1.0:
 
-- **Plan mode active** (the usual case straight after `bd-plan`): present both shapes and your
+- **Plan mode active** (the operator entered it themselves): present both shapes and your
   recommendation as the plan and call `ExitPlanMode`. That single call is "leave read-only and
   start" — approval accepts the recommended mode; if the operator wants the other mode they say
   so in their reply, and you honour it. Do not also ask via `AskUserQuestion`; two gates for
@@ -208,7 +221,10 @@ sections that own them — these are the lines you never cross:
 
 Before the dispatch gate:
 
-- [ ] Plan resolved; phase selected; executed tasks skipped
+- [ ] Plan resolved — or, with no structured plan, bd-plan run to a saved plan; phase
+      selected; executed tasks skipped
+- [ ] `bd-decision-log` loaded and an `execute:start` row written; its one-line summary
+      shown at the gate
 - [ ] Plan-mode state noted, so the gate uses `ExitPlanMode` (in plan mode) or
       `AskUserQuestion` (not) — one gate, never both, and `EnterPlanMode` never called
 - [ ] Execution mode presented at the gate (solo inline vs parallel crew) with a recommended

@@ -128,7 +128,8 @@ mail on a `gone` agent is a contradiction — report STUCK.
 
 Interventions (the only ones):
 
-- `blocked` status → read the note; if you can answer from the plan/codebase, send ONE
+- `blocked` status → read the note; if you can answer from the plan/codebase, log the answer
+  as an `execute:answer` row (you are deciding for the operator), then send ONE
   order through the inbox: `inbox-send.sh <run-dir> <id> <agent-name> "<answer>. Resume
   your brief."` (names from `crew.json`) — the crewmate rewrites its own status. If it
   needs the human, relay verbatim and wait.
@@ -147,7 +148,8 @@ Interventions (the only ones):
   4. **Scope re-cut** (work landed in the wrong task, or a defect turned up outside anyone's
      scope) → do not silently reassign; put it to the human with your recommendation.
   5. **Record it** in the phase file's Report and in `CHECKPOINT.md` (a deviation you only
-     hold in context is lost on the next clear).
+     hold in context is lost on the next clear), and as an `execute:deviation` row in the
+     decision log naming who you relayed it to.
 
   Never sit on a relay to "batch" it — the cost of a deviation is proportional to how long a
   sibling keeps building on the stale assumption.
@@ -259,6 +261,7 @@ When no runnable tasks remain in the phase:
    Blocked: <id> — <note>
    Stuck:   <id> — <state> since <time>
    Minor findings: <collected from status files>
+   Decisions: <the decision log's one-line summary and path>
    Babysitting: <task-id list> — each crewmate is watching its own PR and will report
    back; it pauses for you on review decisions, and reports the merge when it lands.
    Tabs left open: <task-id list> — each lane stays until you approve retiring it, which
