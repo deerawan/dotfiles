@@ -12,10 +12,10 @@ grounded in the real codebase, with a directional code sketch under each task so
 a human can judge intent at a glance. Every task should be small enough to
 implement, test, and verify in a single focused session.
 
-**Planning is read-only, and enforced — not promised.** bd-plan runs inside plan
-mode, so the harness blocks edits rather than trusting this paragraph. No source
-edits, no scaffolding, no code execution that mutates state. The output is a
-plan document.
+**Planning is read-only.** bd-plan runs without plan mode and without an
+approval prompt, so nothing but this rule stops an edit — hold it. No source
+edits, no scaffolding, no code execution that mutates state. The only file
+written is the plan document, at Step 8.
 
 **Do not reward verbosity.** Plan length is a cost, not a quality signal. The
 plan describes only what *changes*; existing behavior is referenced by path,
@@ -50,22 +50,20 @@ Step 0 gate.
 
 ---
 
-## Step 0: Enter Plan Mode, then Gate Depth
+## Step 0: Gate Depth
 
-**Call `EnterPlanMode` first — before reading a single file.** Grounding is
-itself read-only work, so there is nothing bd-plan does that belongs outside
-plan mode. Entering it is what makes the read-only contract real: the harness
-refuses edits, so a plan run cannot quietly become an implementation run.
+**First, invoke the `bd-decision-log` skill** and open this run with a
+`plan:start` row. No approval gate means the operator reviews your calls after
+the fact, so every call this skill tells you to make on your own — each one
+marked *(log it)* below — gets a row the moment you make it.
 
-- The user must consent to entering. If they decline, say in one line that
-  planning will proceed under the read-only contract without harness
-  enforcement, and continue — a declined prompt is not a reason to refuse the
-  work.
-- **If plan mode is already active, do not call it again.** Note it and move on.
-- Nothing is written to disk until Step 8, after the approval gate. Everything
-  between here and there lives in the conversation.
+Never call `EnterPlanMode` — its only exit is an approval prompt, and bd-plan
+has none. If plan mode is already active, note it: Step 8b's save is then
+blocked, so leave the plan in the conversation and say so. Nothing is written
+to disk until Step 8 except the decision log; everything else lives in the
+conversation.
 
-Then classify the work, from signals — do not ask unless genuinely ambiguous:
+Classify the work, from signals — do not ask unless genuinely ambiguous:
 
 | Depth | Signals | Shape |
 |---|---|---|
@@ -73,7 +71,7 @@ Then classify the work, from signals — do not ask unless genuinely ambiguous:
 | **Standard** | one feature, some technical decisions, spec/ticket exists | typically 3–6 tasks, truths + artifacts, sketch the non-obvious tasks |
 | **Deep** | cross-cutting, migrations, auth/payments/external APIs, high ambiguity | typically 4–8 tasks, full acceptance surface, sketch only the 2–3 non-obvious tasks |
 
-Announce the classification in one line and proceed.
+Announce the classification in one line and proceed *(log it)*.
 
 **Risk sets rigor; the work sets task count.** A one-task payment fix gets Deep
 rigor (full acceptance surface, checkpoints) with one task — never pad tasks to
@@ -85,13 +83,37 @@ systems, exported public APIs, CI config, shared types imported downstream);
 downward if the keyword-triggered risk turns out to be routine — an exact
 pattern to copy from last week. Say so in one line.
 
-At **Deep** only, you may *offer* research subagents (pattern exploration, best
-practices). Never launch them unasked at any depth.
+**Exploration subagents launch on your call, not the user's** — no offer, no
+wait. Every run explores through subagents; how many is decided case by case
+in Step 1.0, not by depth.
 
 ## Step 1: Ground
 
 Before writing anything, operate read-only in the repo:
 
+0. **Decide how to explore, case by case**, and announce it in one line *(log it)*:
+   - **Simple** — one module, a small utility, a narrow change: spawn **one**
+     `Explore` subagent covering the whole change.
+   - **Complex** — the code to understand spans several files, packages, or
+     services, or the change is cross-cutting: split the work into 2–4
+     distinct angles (e.g. the data path, the UI surface, the shared package
+     and its importers) and spawn one `Explore` subagent per angle in a
+     single message.
+   - **External research** — whenever the work leans on an external API, a
+     third-party library, or a framework feature the repo hasn't used before,
+     add one `general-purpose` subagent with web access to the same message,
+     on either path. Brief it with the version the repo pins (from the
+     manifest or lockfile) and have it return the documented way to do this
+     at that version, known pitfalls, and anything deprecated — each claim
+     with a source link. Step 1b weighs its findings; a finding that rules
+     out an approach is logged. Skip it when the work only touches the
+     repo's own code.
+
+   When in doubt, take the simple path. Every explorer is read-only and returns file
+   paths with line numbers, the nearest analogous implementation, conventions,
+   importers of touched files, and test commands — pointers, never file dumps.
+   Spot-read every cited line the plan will lean on before trusting it. Items
+   1–5 below then run against their findings instead of from scratch.
 1. **Read every provided artifact** — each owns a different slice:
    - **Ticket**: acceptance criteria and scope boundaries. Each AC must
      resurface in the acceptance surface (Step 2) and the coverage matrix
@@ -131,8 +153,29 @@ ASSUMPTIONS I'M MAKING:
 → Correct me now or I'll proceed with these.
 ```
 
-Then proceed — codebase assumptions are non-blocking. Product-behavior
+Then proceed *(log each assumption)* — codebase assumptions are non-blocking. Product-behavior
 decisions never go here; they go through the question round above.
+
+## Step 1b: Compare Designs
+
+Runs at **Deep** always, and at **Standard** when grounding shows more than one
+viable shape (where logic lives, data model, module boundary, sync vs async).
+Skip at Lightweight — the analogous implementation is the design. Run it before
+the item 6 question round so any product fork it surfaces joins that round.
+
+1. Sketch **at least two structurally distinct candidates** — whole shapes, not
+   point tweaks inside one shape. Each gets the caller's usage first, then the
+   types and signatures it implies.
+2. Screen each: does a change that looks right from one file stay right for the
+   whole repo? Which hides more behind a smaller public surface? Which matches
+   the nearest analogous implementation and Global Constraints? Which has the
+   smaller blast radius?
+3. **Pick one yourself.** A technical fork is yours to settle, so never ask the
+   user to choose. Only a fork that turns on product behavior goes to the
+   question round.
+4. Record it in Architecture Decisions: a table (Option | Shape | Wins | Loses),
+   then the pick and the one reason it won *(log it)*. Task sketches follow the
+   pick.
 
 ## Step 2: Acceptance Surface
 
@@ -398,46 +441,35 @@ Report findings with severity — **blocker** (fix before saving) vs **warning**
 (note in the plan's Risks section) — then fix blockers inline and move on.
 Do not emit a verdict on your own plan.
 
-## Step 8: Approve, Save, Hand Off
+## Step 8: Review, Save, Hand Off
 
-### 8a. Approval gate — `ExitPlanMode`
+No approval gate. The plan-review pass stands in for it; the operator's next
+approval is bd-execute's dispatch gate.
 
-Present the finished plan and call `ExitPlanMode`. **This is the gate: nothing
-is written to disk before the user approves.** Do not ask "is this plan okay?"
-via `AskUserQuestion` — `ExitPlanMode` *is* that question, and asking twice
-reads as a stall.
+### 8a. Review and autofix — `plan-review`
 
-The whole plan goes into plan mode's own plan file so the user reviews the real
-thing, not a summary of it. Where the harness names that file, write there.
+Before saving, invoke the **plan-review** skill on the finished plan. It runs
+its own research subagents, so it stays a separate pass from the author.
 
-Two outcomes:
+- **Fix every `[blocker]` and `[warning]` yourself**, without asking —
+  plan-review's "don't rewrite" rule yields to this step. Re-read each
+  finding's cited source first; drop one that doesn't hold up and say why.
+- A fix that needs a product-behavior call goes to Open Questions with your
+  recommendation, never a guess.
+- Leave `[nit]`s unfixed and list them in the handoff.
+- One review pass. Don't re-review your own fixes.
+- *(Log each finding fixed, dropped, or deferred.)*
 
-- **Approved** → continue to 8b and save to `~/.claude/plans/`.
-- **Rejected, or the user asks for changes** → stay in plan mode, revise, and
-  gate again. Never save a rejected plan; never treat "one more thing" as
-  approval.
-
-If plan mode was never entered (the user declined in Step 0), there is nothing
-to exit — show the plan, get an explicit go-ahead, then save.
+In the handoff, show a short review summary: verdict, what was fixed, what was
+dropped, nits left — then the decision log's one-line summary and path.
 
 ### 8b. Save
 
 Save to `~/.claude/plans/<kebab-topic>.md` — user-level (reachable from every
 worktree), descriptive kebab-case name, never a random generated name. This is
-the durable copy and the one downstream skills read; plan mode's own plan file
-is a review surface, not the artifact.
+the durable copy and the one downstream skills read.
 
-Do the re-run / `.vN` snapshot handling below at this point — after approval,
-never before. Snapshotting a plan the user then rejects leaves a `.v2` file
-recording a version that was never adopted.
-
-### 8c. Line review — `human-review`
-
-Once the plan is saved, hand it to the **human-review** skill (`/human-review`)
-on the saved file so the user can edit and comment on the plan in the browser.
-Fold every edit and comment back into the plan file, preserving its Markdown
-formatting; append substantive changes to Revision History. This is bd-plan's
-review surface — it does not rely on plannotator's `ExitPlanMode` UI.
+Do the re-run / `.vN` snapshot handling below at this point, after 8a's fixes.
 
 **Plan document skeleton:**
 
@@ -450,7 +482,7 @@ review surface — it does not rely on plannotator's `ExitPlanMode` UI.
 ## Assumptions         <!-- from Step 1, if any -->
 ## Acceptance Surface  <!-- truths T1…Tn, key links -->
 ## Behaviour Scenarios <!-- S1…Sn, or the one-line "none — technical story" -->
-## Architecture Decisions  <!-- decision + rationale, delta only -->
+## Architecture Decisions  <!-- decision + rationale, delta only; Step 1b options table when it ran -->
 ## Tasks               <!-- Step 5 structure, checkpoints interleaved -->
 ## Risks               <!-- table: Risk | Impact (High/Med/Low) | Mitigation.
                             Rows include self-check warnings and retrofitted
@@ -474,7 +506,6 @@ completed checkboxes only for tasks whose body is unchanged — a revised task
 gets un-checked — and append what changed to Revision History.
 
 **Handoff — offer, don't perform:**
-- a separate review pass to critique it (bd-plan never reviews its own output)
 - execution (this session or a fresh one, plan file as the prompt)
 
 ---
@@ -510,21 +541,27 @@ Structural failures (placeholders, untraced tasks, missing criteria, oversized
 tasks) are Step 7's job to catch — these are the temptations to self-check for:
 
 - Starting implementation during planning (planning is read-only)
-- Skipping `EnterPlanMode` and relying on the read-only paragraph instead
-- Saving the plan file — or snapshotting a `.vN` — before `ExitPlanMode`
-  approval
-- Treating a request for changes as approval
-- Emitting a verdict on your own plan (review is a separate pass)
+- Calling `EnterPlanMode`, or asking the user to approve the plan
+- Saving the plan file — or snapshotting a `.vN` — before 8a's fixes land
+- Emitting a verdict on your own plan (8a's plan-review is that pass)
 
 ## Verification
 
 Before saving, confirm:
 
-- [ ] `EnterPlanMode` called before any file was read — or the user declined and
-      that was stated
-- [ ] Plan presented and approved via `ExitPlanMode`; nothing written to disk
-      before that
+- [ ] No `EnterPlanMode`, no approval prompt; nothing but the decision log
+      written to disk before 8b
+- [ ] `bd-decision-log` loaded at Step 0; every *(log it)* call has a row;
+      rows checked against the run before handing back
+- [ ] plan-review ran; every blocker and warning fixed or dropped with a reason;
+      nits listed in the handoff
 - [ ] Depth announced; classification still fits what grounding revealed
+- [ ] Exploration call (simple/complex) announced; one explorer (simple) or
+      2–4 (complex) spawned unasked; cited lines spot-read
+- [ ] External research subagent spawned whenever the work leans on an external
+      API, library, or new framework feature, briefed with the pinned version
+- [ ] Step 1b ran where required: ≥2 distinct candidates, pick made without
+      asking, options table in Architecture Decisions
 - [ ] Global Constraints extracted verbatim; assumptions surfaced
 - [ ] Truths written before tasks
 - [ ] Behaviour scenarios written for any story with a user POV — or their
