@@ -124,7 +124,7 @@ Restructure (many files moved): keep the prose to why, and put the moves in a ta
 | Debugging path, dead ends, what you tried first | nowhere | doesn't change the merge decision |
 | Demo screenshots and recordings | **the body**, in the demo/screenshots section | images cost no reading budget, and it's the first thing a reviewer opens |
 
-Never paste raw command output or long reports inline as prose. If text evidence matters, put it in the demo/screenshots section inside a collapsed `<details>` block — collapsed blocks don't compete for reading attention, so they don't count against the budget — and keep the Testing checkboxes to one line each pointing at it.
+Never paste raw command output or long reports inline as prose. If text evidence matters, summarize it visibly in the demo/screenshots section as a short table or a few bullets, and count those words against the budget. Never hide evidence in a collapsed `<details>` block: reviewers skim past the toggle and never open it. Raw output too long to summarize goes in a PR comment, with one line in the section pointing at it. Keep the Testing checkboxes to one line each.
 
 ## Demo/Screenshots
 
@@ -134,7 +134,7 @@ It goes in the body, not a comment, because the budget caps words and a screensh
 
 The cap is on volume, not placement:
 
-- **In the body:** up to about three images, or one short recording, showing the change itself. Before/after pairs count as one. Long text evidence goes in a collapsed `<details>` block.
+- **In the body:** up to about three images, or one short recording, showing the change itself. Before/after pairs count as one. Text evidence is a visible summary (table or bullets), never a collapsed `<details>` block.
 - **In a comment:** full walkthroughs, per-state galleries, multi-viewport sets, raw automated browser-test runs. Leave one line in the section pointing at the comment.
 - **No user-visible change:** say exactly that in one line. Don't delete the heading, and don't pad it with an explanation of why there's nothing to show.
 
