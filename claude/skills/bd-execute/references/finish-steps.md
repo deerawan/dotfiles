@@ -26,7 +26,9 @@ checks them, and in crew mode `write-status.sh done` refuses without them.
    every line is `pass`. Only write a line for a run you saw finish in this session.
 4. **Domain testing** — check your session's available agents and skills for any tester
    whose domain matches what you changed. If one matches, dispatch it against your change;
-   if it reports failures, fix and re-run. Save its FULL structured report to
+   if it reports failures, fix and re-run. Every plan behaviour scenario whose
+   `Demonstrable after` names a task in this change goes into the tester's test description
+   verbatim, Given/When/Then intact; add checks of your own only after those. Save its FULL structured report to
    `<proof-dir>/task-<id>.testing.md` — verbatim, never summarised, so the human can read the
    real thing. If none matches, the file is the single line `no matching tester`.
    Never fabricate a report. **The full report does not go in the PR body** (see next step).
@@ -57,3 +59,33 @@ checks them, and in crew mode `write-status.sh done` refuses without them.
 
 Check the gates. Every field must be `ok` (`testing:skipped` is fine when no tester matched):
 `~/.claude/skills/bd-execute/scripts/gates.sh <proof-dir> <id>`
+
+## Post the PR body
+
+Whoever posts runs this — the crew lead per task (parallel-mode Step 7), or you in solo mode.
+Inputs: `<pr>` (branch or number, PR already open), `<body>` (the `pr.md` file),
+`<recordings>` (the worktree's `.playwright-cli/recordings/`), `<parent>` (the PR's base).
+
+1. **Post only into an empty body.** `pr.md` is a one-shot handoff; once a PR has a body, the
+   PR is the source of truth — a human may have added screenshots or edited it since. Check
+   the length, never the body, so the text stays out of your context:
+   ```bash
+   gh pr view <pr> --json body -q '.body | length'   # 0 covers null and empty
+   ```
+   Non-zero → **leave it alone**; re-applying `pr.md` silently destroys a human's edits. If it
+   genuinely needs changing, invoke `bd-pr`, which fetches the live body and splices.
+2. **Check the body before posting** — you are the last gate:
+   ```bash
+   awk '/PULUMI_PREVIEW_START/{exit} {print}' <body> | wc -w
+   git diff --shortstat <parent>...<pr>
+   ```
+   Over ~450 words, longer than its own diff, or containing logs / test transcripts / commit
+   narration → trim it (invoke `bd-pr`). Keep the template headings and comment markers
+   intact, and leave the full tester report in `task-<id>.testing.md`.
+3. **Post with attachments.** A bare `--body-file` uploads nothing, so every `](./…)` ref
+   (Demo screenshots/recordings) ships broken. From `<recordings>`, attach each ref
+   (`grep -o '](\./[^)]*' <body>`); gh rewrites them to CDN URLs in place:
+   ```bash
+   cd <recordings> && gh pr edit <pr> --body-file <body> --attach ./<file> [--attach ./<file>…]
+   ```
+   Then run `bd-pr`'s post-attach check.

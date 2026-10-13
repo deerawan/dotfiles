@@ -19,6 +19,10 @@ the worktree. You never touch other tasks, other branches, or the main worktree.
 {full plan task section: description, traces-to, consumes/produces, acceptance criteria,
 test scenarios, verification, files, proposed code}
 
+## Behaviour scenarios this task completes (from the plan, verbatim)
+
+{every plan behaviour scenario whose `Demonstrable after` names Task {N}, or `none`}
+
 ## Global constraints (from the plan header)
 
 {plan Global Constraints section, verbatim}

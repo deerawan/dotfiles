@@ -22,8 +22,10 @@ write-back at the end. The crew steps (`parallel-mode.md`) do not apply.
    (untracked, per worktree), `<id>` = `solo`, `<pr-template>` = the template found in
    preflight (SKILL.md Step 1.4), `<escalate>` = stop and ask the human.
 4. **Commit and open ONE PR.** Commit on `<branch>`, `git push -u origin <branch>`, then
-   `gh pr create --draft --body-file "$(git rev-parse --git-dir)/bd-execute/task-solo.pr.md"`.
-   If `<base>` isn't trunk, set the PR base to it.
+   `gh pr create --draft --body ""` (with `--base <base>` if `<base>` isn't trunk). Post the
+   body by following [finish-steps.md](finish-steps.md) "Post the PR body" with `<pr>` =
+   `<branch>`, `<body>` = `$(git rev-parse --absolute-git-dir)/bd-execute/task-solo.pr.md`,
+   `<recordings>` = this worktree's `.playwright-cli/recordings/`, `<parent>` = `origin/<base>`.
 5. **Write back to the plan** (surgical, idempotent — bd-ticket's style): `**Branch:**` and
    `**PR:**` under each executed task heading, plus one Revision History line for the run.
 6. **Babysit.** Run `/babysit-pr` on the new PR (or, if unavailable, poll `gh pr checks` and
@@ -41,5 +43,5 @@ instead of improvising.
 
 - [ ] Every selected task implemented on the one branch, each past its verification gate
 - [ ] `gates.sh` printed `review:ok verify:ok testing:ok|skipped pr:ok`
-- [ ] One draft PR open from `task-solo.pr.md`; plan annotated (Branch/PR + Revision History);
+- [ ] One draft PR open, body posted from `task-solo.pr.md` with Demo files attached; plan annotated (Branch/PR + Revision History);
       `/babysit-pr` started

@@ -88,7 +88,8 @@ phase; after that, the phase file is the only source of the map.
 For each task in the current wave (respect `--cap`; sub-batch if larger):
 
 1. Write `<run-dir>/task-<id>.brief.md` from [worker-brief.md](worker-brief.md). Paste the plan
-   task and Global Constraints **verbatim** — the crewmate has zero context.
+   task, Global Constraints, and the behaviour scenarios whose `Demonstrable after` names
+   this task **verbatim** — the crewmate has zero context.
 2. Spawn **serially** (worktree creation races on `.git`):
    ```
    ~/.claude/skills/bd-execute/scripts/spawn-crewmate.sh <repo-root> <run-dir> <task-id> \
@@ -193,35 +194,11 @@ When no runnable tasks remain in the phase:
    pre-filled here would read as a body and make step 2 skip the task — stranding the empty
    template on the PR instead of the crewmate's `<run-dir>/task-<id>.pr.md`.
 2. Apply the crewmates' bodies **for every task** (this is what puts the template shape on
-   the PR, not stax). **`pr.md` is a one-shot handoff: post it only into an empty body.**
-   Once a PR has a body, the PR is the source of truth and `pr.md` is a stale copy — a
-   human may have added screenshots or edited it since. Check the length, never the body,
-   so the text stays out of your context:
-   ```bash
-   gh pr view <branch> --json body -q '.body | length'   # 0 covers null and empty
-   ```
-   - `0` → `gh pr edit <branch> --body-file <run-dir>/task-<id>.pr.md`. Disk to GitHub;
-     nothing passes through you. A task with no `pr.md` gets its body written by you from
-     its status file and plan task — never leave a PR with an empty body.
-     If `pr.md` has `](./…)` refs (Demo screenshots/recordings), a bare `--body-file`
-     uploads nothing and every image ships broken. Run the edit from the crewmate's
-     `<worktree>/.playwright-cli/recordings/` and add `--attach ./<file>` for each ref
-     (`grep -o '](\./[^)]*' task-<id>.pr.md`); gh rewrites them to CDN URLs in place.
-     Then run `bd-pr`'s post-attach check.
-   - non-zero → **leave it alone.** Already posted on an earlier pass or edited by hand.
-     Re-applying `pr.md` is what silently destroys a human's screenshots. If it genuinely
-     needs changing, invoke `bd-pr`, which fetches the live body and splices.
-
-   **Check each body before posting it** — you are the last gate, and a crewmate that just
-   spent hours in one task tends to over-explain it:
-   ```bash
-   awk '/PULUMI_PREVIEW_START/{exit} {print}' <run-dir>/task-<id>.pr.md | wc -w
-   git diff --shortstat <parent>...<branch>
-   ```
-   Over ~450 words, longer than its own diff, or containing logs / test transcripts /
-   commit narration → trim it yourself (invoke `bd-pr`) before `gh pr edit`. Keep the
-   template headings and comment markers intact while trimming, and leave the full tester
-   report where it belongs: `task-<id>.testing.md`.
+   the PR, not stax): follow [finish-steps.md](finish-steps.md) "Post the PR body" with
+   `<pr>` = `<branch>`, `<body>` = `<run-dir>/task-<id>.pr.md`, `<recordings>` = the
+   crewmate's `<worktree>/.playwright-cli/recordings/`, `<parent>` = its parent branch.
+   A task with no `pr.md` gets its body written by you from its status file and plan task —
+   never leave a PR with an empty body.
 3. Verify: `stax ll` shows a PR per branch, each PR's base is its parent branch (trunk for
    roots), all drafts, and every PR body carries the repo template's headings — including
    any HTML comment markers CI depends on. Fix any that don't with `bd-pr`, working from the
