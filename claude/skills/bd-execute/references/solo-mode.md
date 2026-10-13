@@ -1,28 +1,29 @@
 # Solo mode (inline)
 
-Entered from the dispatch gate (SKILL.md Step 3) when the operator picks **solo**, for a small
-phase. You implement every selected task yourself, in the **current worktree**, on **one
-branch**, and open **one PR**. No herdr, no stax, no crewmates, no run-dir state — just the plan
+Entered from the dispatch gate (SKILL.md Step 3) when the operator picks **solo**, for small
+work. You implement every remaining task in the plan, across all phases, yourself, in the
+**current worktree**, on **one branch**, and open **one PR** based on trunk. Never stack, and
+never open a PR per phase. No herdr, no stax, no crewmates, no run-dir state — just the plan
 write-back at the end. The crew steps (`parallel-mode.md`) do not apply.
 
-1. **Branch.** From the current worktree, cut one branch off the phase's base — trunk, or the
-   phase's single unmerged dependency branch if it stacks on earlier work:
-   `git fetch origin && git switch -c <branch> origin/<base>`. Name it as in the branch map
-   (SKILL.md Step 2) but **one branch for the whole phase**: `<ticket-key-lowercase>-<short-slug>`
-   if the phase carries a `**Ticket:**`, else `<plan-slug>-<phase-slug>`. ≤ 40 chars. If the
+1. **Branch.** From the current worktree, cut one branch off trunk:
+   `git fetch origin && git switch -c <branch> origin/<base>`, `<base>` = trunk. Name it as in
+   the branch map (SKILL.md Step 2) but **one branch for the whole plan**:
+   `<ticket-key-lowercase>-<short-slug>` if the plan carries a `**Ticket:**`, else
+   `<plan-slug>`. ≤ 40 chars. If the
    worktree isn't clean, stop and hand it back — never build on someone else's uncommitted work.
-2. **Implement task by task, in dependency order** (the topological order from SKILL.md Step 2,
-   run sequentially — waves don't apply). For EACH task, follow [worker-brief.md](worker-brief.md)
+2. **Implement task by task, in dependency order** across every phase (the topological order
+   from SKILL.md Step 2, run sequentially — waves and checkpoints don't pause the run). For EACH task, follow [worker-brief.md](worker-brief.md)
    "How to work" steps 1–3 (guidance chain, test-first, verification gate). The verification
    gate must be green before the next task starts. Any departure from the plan — a file
    outside `Files:`, a changed signature, a plan assumption the code disproved — gets an
    `execute:deviation` row in the decision log as it happens.
-3. **Finish steps**, once, on the whole phase diff: follow [finish-steps.md](finish-steps.md)
+3. **Finish steps**, once, on the whole diff: follow [finish-steps.md](finish-steps.md)
    with `<base>` = `origin/<base>`, `<proof-dir>` = `$(git rev-parse --git-dir)/bd-execute`
    (untracked, per worktree), `<id>` = `solo`, `<pr-template>` = the template found in
    preflight (SKILL.md Step 1.4), `<escalate>` = stop and ask the human.
 4. **Commit and open ONE PR.** Commit on `<branch>`, `git push -u origin <branch>`, then
-   `gh pr create --draft --body ""` (with `--base <base>` if `<base>` isn't trunk). Post the
+   `gh pr create --draft --body ""`. Post the
    body by following [finish-steps.md](finish-steps.md) "Post the PR body" with `<pr>` =
    `<branch>`, `<body>` = `$(git rev-parse --absolute-git-dir)/bd-execute/task-solo.pr.md`,
    `<recordings>` = this worktree's `.playwright-cli/recordings/`, `<parent>` = `origin/<base>`.
@@ -41,7 +42,8 @@ instead of improvising.
 
 ## Before reporting done
 
-- [ ] Every selected task implemented on the one branch, each past its verification gate
+- [ ] Every remaining task, across all phases, implemented on the one trunk-based branch, each
+      past its verification gate
 - [ ] `gates.sh` printed `review:ok verify:ok testing:ok|skipped pr:ok`
 - [ ] One draft PR open, body posted from `task-solo.pr.md` with Demo files attached; plan annotated (Branch/PR + Revision History);
       `/babysit-pr` started

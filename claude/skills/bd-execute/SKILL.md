@@ -7,8 +7,8 @@ model: claude-opus-4-8
 
 # bd-execute — executor for bd-plan phases
 
-Take an approved bd-plan plan, pick ONE phase, and implement it — either as a **parallel crew**
-or **solo inline**. This file is the shared spine: resolve the plan, preflight, map the
+Take an approved bd-plan plan and implement it — ONE phase as a **parallel crew**, or every
+remaining phase **solo inline**. This file is the shared spine: resolve the plan, preflight, map the
 branches, and gate. The operator picks the mode at the dispatch gate (Step 3); the full flow
 for the chosen mode then lives in its own reference file.
 
@@ -28,10 +28,11 @@ you ↔ lead (this session)          ← parallel crew
   task gets its own worktree, herdr tab, Claude session, and stacked draft PR. Full flow:
   [references/parallel-mode.md](references/parallel-mode.md). There you are the **lead** and
   never edit code — code is the crewmates' job.
-- **Solo inline** — for a small phase (often one task, or a few tightly-coupled ones) where the
-  crew overhead isn't worth it. This session implements every selected task itself, in
-  dependency order, in the **current worktree** on **one branch**, and opens **one PR**. No
-  herdr tabs, no stax lanes, no stack. Full flow:
+- **Solo inline** — for small work (often one task, or a few tightly-coupled ones) where the
+  crew overhead isn't worth it. This session implements **every remaining task in the plan,
+  across all phases**, in dependency order, in the **current worktree** on **one branch**, and
+  opens **one PR** based on trunk. Solo ignores `--phase`. No herdr tabs, no stax lanes, no
+  stack. Full flow:
   [references/solo-mode.md](references/solo-mode.md). There you are the implementer.
 
 ## Input
@@ -42,7 +43,7 @@ plan behind it (see Step 0.1).
 
 | Flag | Effect |
 |---|---|
-| `--phase N` | Execute phase N (number or name). Omitted → propose the first phase with unexecuted tasks and confirm at the dispatch gate |
+| `--phase N` | (parallel) Execute phase N (number or name). Omitted → propose the first phase with unexecuted tasks and confirm at the dispatch gate. Solo ignores it and runs every remaining phase |
 | `--cap N` | (parallel) Max parallel crewmates per wave (default 4) |
 | `--step` | (parallel) Human-stepped waves: pause after each wave settles and confirm before dispatching the next (recommended for a plan's first crew run) |
 | `--yolo` | (parallel) Start crewmates with `--dangerously-skip-permissions` instead of the default `--permission-mode auto`. Only when the user explicitly passes it |
@@ -84,8 +85,11 @@ happens.
 2. Identify phases. A flat (Lightweight) plan is one implicit phase. Select the `--phase`
    tasks; skip tasks already executed (a `**PR:**`/`**Branch:**` annotation from a previous
    run, or a settled status file in the run dir).
-3. **Phase discipline:** tasks outside the selected phase do not exist this run. If a selected
-   task depends on a task in a LATER phase, stop and report the plan inconsistency.
+3. **Phase discipline (parallel):** tasks outside the selected phase do not exist this run. If a
+   selected task depends on a task in a LATER phase, stop and report the plan inconsistency.
+   Solo selects every unexecuted task in the plan instead. If one depends on a task executed in
+   a previous run whose PR is still unmerged, solo is unavailable: say so at the gate (merge it
+   first, or pick parallel), because one trunk-based PR can't contain it.
 4. If a checkpoint precedes the selected phase in the plan and earlier-phase PRs are still
    unreviewed, say so in one line at the dispatch gate — the human decides whether to proceed.
 
@@ -140,7 +144,7 @@ For each selected task:
 
 - **Branch name:** `<ticket-key-lowercase>-<short-slug>` when the task carries a
   `**Ticket:**` annotation (bd-ticket ran); else `<plan-slug>-t<N>-<short-slug>`. ≤ 40 chars.
-  (Solo mode collapses the phase to one branch — see references/solo-mode.md.)
+  (Solo mode collapses the whole plan to one trunk-based branch — see references/solo-mode.md.)
 - **Parent (stack base):** the branch of the task's deepest dependency that has a branch in
   this or a previous run and is not yet merged; otherwise trunk. Dependencies whose PRs
   already merged collapse to trunk.
@@ -162,12 +166,13 @@ Show, for the selected phase:
   from Step 0.4;
 - **Parallel crew** shape — the dispatch table (task, branch, parent, wave, tab label,
   worktree) and cap;
-- **Solo inline** shape — the single branch name, its parent/base, and the dependency order the
-  tasks run in, all in the current worktree, ending in one PR.
+- **Solo inline** shape — every remaining task across all phases, the single branch name off
+  trunk, and the dependency order the tasks run in, all in the current worktree, ending in one
+  PR. Name any plan checkpoints solo will run through without pausing.
 
-Recommend a default: **solo** when the phase is one task, or a few tightly-coupled tasks that
-share files or form a clear sequential chain; **parallel** when the tasks are independent and
-worth running at once. The operator's pick is both the mode and the go-ahead. Log the
+Recommend a default: **solo** when the remaining work is one task, or a few tightly-coupled
+tasks that share files or form a clear sequential chain; **parallel** when the tasks are
+independent and worth running at once. The operator's pick is both the mode and the go-ahead. Log the
 recommendation as an `execute:mode` row whose `result` is the operator's pick.
 
 How you gate depends on the harness state noted in Step 1.0:
@@ -211,7 +216,8 @@ sections that own them — these are the lines you never cross:
   to `crew.json` / `CHECKPOINT.md` as they happen, not at clear-time from memory.
 - Run spawn-crewmate.sh calls in parallel.
 - Kill or close a stuck crewmate's tab; approve a permission prompt on the human's behalf.
-- Execute tasks from a phase the user didn't select.
+- Execute tasks from a phase the user didn't select (parallel), or split solo work across
+  more than one branch or PR.
 - `stax sync` / `stax sweep` unasked (they delete branches in bulk — retire merged lanes
   one task at a time instead).
 - Let a crewmate push or open PRs before the parallel Step 7.4 handoff — after it, pushing
