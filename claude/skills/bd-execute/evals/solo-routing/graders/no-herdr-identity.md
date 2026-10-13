@@ -2,6 +2,7 @@
 type: tool_used
 tool: Bash
 input_match: 'herdr\s+(agent|tab)\s+rename'
+min: 0
 max: 0
 ---
 

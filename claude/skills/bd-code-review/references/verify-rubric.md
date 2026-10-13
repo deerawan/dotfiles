@@ -20,7 +20,9 @@ the test):
 
 - Pre-existing issues the diff didn't touch, even real ones on adjacent lines
 - Anything a linter, typechecker, or CI build will catch (imports, type errors,
-  formatting) — assume those run separately
+  formatting) — assume those run separately. Not when the diff changes that tool's
+  config: a rule it lowers, drops, or newly ignores is reportable, judged under the
+  flags CI actually uses
 - Intentional changes clearly related to the broader change
 - Pedantic nitpicks a senior engineer wouldn't spend review capital on
 - Issues explicitly silenced in code (lint-ignore comments) for rules CLAUDE.md names

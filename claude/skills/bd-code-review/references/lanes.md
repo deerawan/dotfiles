@@ -17,6 +17,14 @@ the history shows this change breaks (a guard added for a past incident now remo
 workaround whose reason still holds). Large defects only — describe the failing input
 or sequence for each.
 
+When the diff changes lint, typecheck, or CI config (or bumps a lint plugin), compare
+the resolved config between base and head on a representative file per config (e.g.
+`eslint --print-config <file>`) and report every rule lowered, dropped, or newly
+ignored, judged under CI's actual flags (under `--quiet`, `warn` is unenforced).
+
+When `package-lock.json` changes, list resolved-version changes for packages the
+manifest diff did not touch; any runtime dependency that moved backwards is a finding.
+
 ## Lane: standards
 
 Trigger: always.

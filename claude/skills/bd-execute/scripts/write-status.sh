@@ -20,11 +20,12 @@ case "$state" in pending|running|done|blocked) ;; *) echo "invalid state: $state
 if [[ "$state" == "done" ]]; then
   source "$(dirname "$0")/gates.sh"
   gates="$(gate_results "$run_dir" "$task_id")"
-  if [[ "$gates" == *missing* || "$gates" == *no-demo* ]]; then
+  if [[ "$gates" == *missing* || "$gates" == *no-demo* || "$gates" == *failed* ]]; then
     cat >&2 <<MSG
 refusing done for $task_id: $gates
   review  -> bd-code-review verdict block (approve or approve-with-fixes) in $run_dir/task-$task_id.review.md
-  testing -> domain tester report, or "no matching tester", in $run_dir/task-$task_id.testing.md
+  verify  -> one "<check>: pass — <command>" line per unit/lint/typecheck run, none failing, in $run_dir/task-$task_id.verify.md
+  testing -> domain tester report, or the line "no matching tester", in $run_dir/task-$task_id.testing.md
   pr      -> PR body via bd-pr in $run_dir/task-$task_id.pr.md, Demo/Screenshots section not empty
 MSG
     exit 3

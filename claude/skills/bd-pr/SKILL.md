@@ -17,13 +17,11 @@ This applies to **Problem, Solution, Acceptance Criteria and Testing**. Demo and
 
 Write those sections for a competent engineer who has none of your context: they weren't in the ticket, haven't read the design doc, and don't know what you tried first.
 
-- **One idea per sentence.** If a sentence has two clauses joined by "and" or a semicolon, it's usually two sentences.
+**Invoke the `bd-technical-writing` skill on those sections before you count the budget.** It owns sentence-level clarity, staying true to the facts, and the AI-tell pass. The rules below are the ones specific to PRs.
+
 - **Concrete over abstract.** "The view returns every customer's rows" beats "tenant scoping is delegated to the repository layer." Say the thing that happens, not the architectural category it belongs to.
 - **Expand or link the first use** of any acronym, internal term, role name or table name a reviewer outside your squad wouldn't know.
 - **Say what breaks if this is wrong**, in terms of what a person would see, not what a system would do. "A customer sees an order that was deleted" beats "a missed predicate degrades data integrity."
-- **No hedging chains.** "It should generally be the case that" is "usually".
-- **Don't make them hold three things at once** to parse one sentence. Nested clauses and back-references ("the former", "as noted above") force a re-read.
-- **Cut the qualifier if the sentence survives it.** Most do.
 - **Prefer a table, list or code block over a paragraph** when it scans faster. Words in a table are cheap to scan; the same words in prose are not.
 - **Keep it factual.** Don't repeat in prose what the Requirements or Testing checkboxes already say.
 
@@ -126,7 +124,7 @@ Restructure (many files moved): keep the prose to why, and put the moves in a ta
 | Debugging path, dead ends, what you tried first | nowhere | doesn't change the merge decision |
 | Demo screenshots and recordings | **the body**, in the demo/screenshots section | images cost no reading budget, and it's the first thing a reviewer opens |
 
-Never paste raw command output or long reports inline as prose. If text evidence matters, put it in the demo/screenshots section inside a collapsed `<details>` block — collapsed blocks don't compete for reading attention, so they don't count against the budget — and keep the Testing checkboxes to one line each pointing at it.
+Never paste raw command output or long reports inline as prose. If text evidence matters, summarize it visibly in the demo/screenshots section as a short table or a few bullets, and count those words against the budget. Never hide evidence in a collapsed `<details>` block: reviewers skim past the toggle and never open it. Raw output too long to summarize goes in a PR comment, with one line in the section pointing at it. Keep the Testing checkboxes to one line each.
 
 ## Demo/Screenshots
 
@@ -136,7 +134,7 @@ It goes in the body, not a comment, because the budget caps words and a screensh
 
 The cap is on volume, not placement:
 
-- **In the body:** up to about three images, or one short recording, showing the change itself. Before/after pairs count as one. Long text evidence goes in a collapsed `<details>` block.
+- **In the body:** up to about three images, or one short recording, showing the change itself. Before/after pairs count as one. Text evidence is a visible summary (table or bullets), never a collapsed `<details>` block.
 - **In a comment:** full walkthroughs, per-state galleries, multi-viewport sets, raw automated browser-test runs. Leave one line in the section pointing at the comment.
 - **No user-visible change:** say exactly that in one line. Don't delete the heading, and don't pad it with an explanation of why there's nothing to show.
 
@@ -165,6 +163,16 @@ Alt text follows the path after `#`. Video renders as a player and takes no alt 
 
 When the PR is already open, follow **Updating an existing body**: fetch the live body, splice the `![]()` reference under the existing heading, then `gh pr edit` with `--body-file` and `--attach`. Don't re-attach an artifact the body already shows.
 
+After posting, check the live body before reporting done. On a private repo a plain `curl` of a `user-attachments` URL returns 404 even when the upload worked, so send the token:
+
+```bash
+gh pr view <n> --json body -q .body | grep -c '](\./'   # must be 0: a leftover local ref is a broken image
+gh pr view <n> --json body -q .body | grep -o 'https://github.com/user-attachments/assets/[^)]*' |
+  while read u; do curl -sL -o /dev/null -w '%{http_code} %{content_type}\n' -H "Authorization: token $(gh auth token)" "$u"; done
+```
+
+Every asset must return `200` with an `image/*` or `video/*` type.
+
 ## Updating an existing body
 
 If the PR is already open, never blindly overwrite its body — the human may have edited it by hand since you last saw it. Always fetch the live body from the remote first, compare it against what you have, and splice your edit into the fetched version:
@@ -181,10 +189,6 @@ Never regenerate from scratch, and never edit from a locally cached copy. Preser
 
 If a section has grown past its budget since the last edit, trim it in the same pass.
 
-## Voice
-
-PR descriptions are prose written on the user's behalf, so follow `~/.claude/VOICE.md`. In particular: contractions, short declarative sentences, conclusion first, no em dashes, no bold for emphasis, emoji sparingly.
-
 ## What not to do
 
 These patterns force the reviewer to reverse-engineer the PR, and each is a reason to send it back:
@@ -197,6 +201,7 @@ These patterns force the reviewer to reverse-engineer the PR, and each is a reas
 
 ## Before posting
 
+- Did `bd-technical-writing` run on Problem, Solution, Acceptance Criteria and Testing?
 - Could a reviewer from another squad read Problem and Solution once and say what changed and what could go wrong?
 - Is every acronym, role name and table name expanded or linked on first use?
 - Is the body shorter than the diff?

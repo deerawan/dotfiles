@@ -67,7 +67,8 @@ pick deliberately. Then:
   `@`-link (it force-loads and burns context).
 - **bd-\* house style.** `SKILL.md` + `references/` + `evals/`, `argument-hint`
   frontmatter, terse imperative voice, a `Never` list. Land it under
-  `~/dotfiles/claude/skills/<name>/`.
+  `<repo>/.claude/skills/<name>/` when the skill is repo-specific or the ticket places it
+  there; `~/dotfiles/claude/skills/<name>/` only for personal cross-repo skills.
 
 ## Step 4: Measure — scaled to type (GREEN)
 
@@ -100,10 +101,11 @@ Repeat until it holds or you stop making progress.
 ## Step 6: Lint + deploy
 
 ```bash
-python "$SC/scripts/quick_validate.py" ~/dotfiles/claude/skills/<name>   # frontmatter, name, limits
+python "$SC/scripts/quick_validate.py" <skill-dir>   # frontmatter, name, limits
 ```
 
-Fix what it flags, then commit under `~/dotfiles/claude/skills/`. (It flags
+Fix what it flags, then commit in the skill's home from Step 3 (the repo branch for a
+repo skill, `~/dotfiles` for a personal one). (It flags
 `argument-hint` as unknown — ignore that one; it's a valid Claude Code field the
 validator's allow-list predates.) Deploy one skill at a time — never batch untested skills. Leave `evals/` as the home for the scenarios you ran
 so the next edit re-baselines against them.

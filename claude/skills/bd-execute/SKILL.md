@@ -1,14 +1,14 @@
 ---
 name: bd-execute
-description: Use when a bd-plan plan is already approved and the user wants a phase implemented — as a parallel crew or solo in the current session, operator's choice at the dispatch gate. Never for planning. Triggers on "bd-execute", "execute the plan as a crew", "run phase N of the plan", "implement the plan in parallel worktrees/tabs".
-argument-hint: "[plan file path or topic] [--phase N] [--cap N] [--step] [--yolo] [--checkpoint]"
+description: Use when the user wants a bd-plan phase implemented — as a parallel crew or solo in the current session, operator's choice at the dispatch gate — or to report on a running crew. Given a raw request instead of a plan, it always runs bd-plan first; it never writes the plan itself. Triggers on "bd-execute", "execute the plan as a crew", "run phase N of the plan", "implement the plan in parallel worktrees/tabs", "crew status".
+argument-hint: "[plan file path, topic, or raw request] [--phase N] [--cap N] [--step] [--yolo] [--checkpoint]"
 model: claude-opus-4-8
 ---
 
 # bd-execute — executor for bd-plan phases
 
-Take an approved bd-plan plan, pick ONE phase, and implement it — either as a **parallel crew**
-or **solo inline**. This file is the shared spine: resolve the plan, preflight, map the
+Take an approved bd-plan plan and implement it — ONE phase as a **parallel crew**, or every
+remaining phase **solo inline**. This file is the shared spine: resolve the plan, preflight, map the
 branches, and gate. The operator picks the mode at the dispatch gate (Step 3); the full flow
 for the chosen mode then lives in its own reference file.
 
@@ -28,24 +28,31 @@ you ↔ lead (this session)          ← parallel crew
   task gets its own worktree, herdr tab, Claude session, and stacked draft PR. Full flow:
   [references/parallel-mode.md](references/parallel-mode.md). There you are the **lead** and
   never edit code — code is the crewmates' job.
-- **Solo inline** — for a small phase (often one task, or a few tightly-coupled ones) where the
-  crew overhead isn't worth it. This session implements every selected task itself, in
-  dependency order, in the **current worktree** on **one branch**, and opens **one PR**. No
-  herdr tabs, no stax lanes, no stack. Full flow:
+- **Solo inline** — for small work (often one task, or a few tightly-coupled ones) where the
+  crew overhead isn't worth it. This session implements **every remaining task in the plan,
+  across all phases**, in dependency order, in the **current worktree** on **one branch**, and
+  opens **one PR** based on trunk. Solo ignores `--phase`. No herdr tabs, no stax lanes, no
+  stack. Full flow:
   [references/solo-mode.md](references/solo-mode.md). There you are the implementer.
 
 ## Input
 
-`$1` — plan file path, or a topic to resolve inside `~/.claude/plans/` (same resolution as
-bd-ticket: glob, ask on multiple hits, list 5 most recent if empty).
+`$1` — plan file path, a topic to resolve inside `~/.claude/plans/` (same resolution as
+bd-ticket: glob, ask on multiple hits, list 5 most recent if empty), or a raw request with no
+plan behind it (see Step 0.1).
 
 | Flag | Effect |
 |---|---|
-| `--phase N` | Execute phase N (number or name). Omitted → propose the first phase with unexecuted tasks and confirm at the dispatch gate |
+| `--phase N` | (parallel) Execute phase N (number or name). Omitted → propose the first phase with unexecuted tasks and confirm at the dispatch gate. Solo ignores it and runs every remaining phase |
 | `--cap N` | (parallel) Max parallel crewmates per wave (default 4) |
 | `--step` | (parallel) Human-stepped waves: pause after each wave settles and confirm before dispatching the next (recommended for a plan's first crew run) |
 | `--yolo` | (parallel) Start crewmates with `--dangerously-skip-permissions` instead of the default `--permission-mode auto`. Only when the user explicitly passes it |
 | `--checkpoint` | (parallel) Write `CHECKPOINT.md` for the in-flight run and stop. Spawns nothing, changes nothing else — use before clearing context (see [references/checkpoint-resume.md](references/checkpoint-resume.md)) |
+
+**"crew status" (or "status" with no plan named) skips every step below:** run
+`~/.claude/skills/bd-execute/scripts/crew-report.sh` and print its output verbatim. Exit 2
+means several runs exist — ask which, then pass that run dir. Then handle any 🔁 row per
+[references/parallel-mode.md](references/parallel-mode.md) *Retiring a merged lane*.
 
 Unrecognized `--` tokens: note and ignore. `--checkpoint` skips the run entirely: resolve the
 run dir, write the checkpoint, report the path.
@@ -61,14 +68,28 @@ clickable in a terminal, so it never appears on its own.
 
 ## Step 0: Resolve Plan and Phase
 
+**First, invoke the `bd-decision-log` skill.** Once the plan path is known, open this run
+with an `execute:start` row in its log. Every call you make on the operator's behalf from
+here on — recommendations, answers to crewmates, deviation handling — gets a row as it
+happens.
+
 1. Resolve and read the whole plan. Required: enumerated tasks with dependencies, `Files:`
-   lists, and acceptance criteria. If tasks lack `Files:` or dependencies, **stop** — point at
-   `bd-plan`; don't invent a decomposition.
+   lists, and acceptance criteria. **No plan, or a plan missing that structure → invoke the
+   `bd-plan` skill** with the request (or the unstructured plan) as input, whatever its size —
+   bd-plan's depth gate keeps small work Lightweight, and its grounding is what the crew
+   builds on. bd-plan reviews, autofixes, and saves with no approval prompt. Once it saves to
+   `~/.claude/plans/`, restart Step 0 on that path; the dispatch gate (Step 3) is the
+   operator's first and only approval, so show the plan path, bd-plan's review summary,
+   and the decision log's one-line summary there. Never write the decomposition yourself — no invented `Files:` lists,
+   dependencies, or acceptance criteria.
 2. Identify phases. A flat (Lightweight) plan is one implicit phase. Select the `--phase`
    tasks; skip tasks already executed (a `**PR:**`/`**Branch:**` annotation from a previous
    run, or a settled status file in the run dir).
-3. **Phase discipline:** tasks outside the selected phase do not exist this run. If a selected
-   task depends on a task in a LATER phase, stop and report the plan inconsistency.
+3. **Phase discipline (parallel):** tasks outside the selected phase do not exist this run. If a
+   selected task depends on a task in a LATER phase, stop and report the plan inconsistency.
+   Solo selects every unexecuted task in the plan instead. If one depends on a task executed in
+   a previous run whose PR is still unmerged, solo is unavailable: say so at the gate (merge it
+   first, or pick parallel), because one trunk-based PR can't contain it.
 4. If a checkpoint precedes the selected phase in the plan and earlier-phase PRs are still
    unreviewed, say so in one line at the dispatch gate — the human decides whether to proceed.
 
@@ -123,7 +144,7 @@ For each selected task:
 
 - **Branch name:** `<ticket-key-lowercase>-<short-slug>` when the task carries a
   `**Ticket:**` annotation (bd-ticket ran); else `<plan-slug>-t<N>-<short-slug>`. ≤ 40 chars.
-  (Solo mode collapses the phase to one branch — see references/solo-mode.md.)
+  (Solo mode collapses the whole plan to one trunk-based branch — see references/solo-mode.md.)
 - **Parent (stack base):** the branch of the task's deepest dependency that has a branch in
   this or a previous run and is not yet merged; otherwise trunk. Dependencies whose PRs
   already merged collapse to trunk.
@@ -145,16 +166,18 @@ Show, for the selected phase:
   from Step 0.4;
 - **Parallel crew** shape — the dispatch table (task, branch, parent, wave, tab label,
   worktree) and cap;
-- **Solo inline** shape — the single branch name, its parent/base, and the dependency order the
-  tasks run in, all in the current worktree, ending in one PR.
+- **Solo inline** shape — every remaining task across all phases, the single branch name off
+  trunk, and the dependency order the tasks run in, all in the current worktree, ending in one
+  PR. Name any plan checkpoints solo will run through without pausing.
 
-Recommend a default: **solo** when the phase is one task, or a few tightly-coupled tasks that
-share files or form a clear sequential chain; **parallel** when the tasks are independent and
-worth running at once. The operator's pick is both the mode and the go-ahead.
+Recommend a default: **solo** when the remaining work is one task, or a few tightly-coupled
+tasks that share files or form a clear sequential chain; **parallel** when the tasks are
+independent and worth running at once. The operator's pick is both the mode and the go-ahead. Log the
+recommendation as an `execute:mode` row whose `result` is the operator's pick.
 
 How you gate depends on the harness state noted in Step 1.0:
 
-- **Plan mode active** (the usual case straight after `bd-plan`): present both shapes and your
+- **Plan mode active** (the operator entered it themselves): present both shapes and your
   recommendation as the plan and call `ExitPlanMode`. That single call is "leave read-only and
   start" — approval accepts the recommended mode; if the operator wants the other mode they say
   so in their reply, and you honour it. Do not also ask via `AskUserQuestion`; two gates for
@@ -193,7 +216,8 @@ sections that own them — these are the lines you never cross:
   to `crew.json` / `CHECKPOINT.md` as they happen, not at clear-time from memory.
 - Run spawn-crewmate.sh calls in parallel.
 - Kill or close a stuck crewmate's tab; approve a permission prompt on the human's behalf.
-- Execute tasks from a phase the user didn't select.
+- Execute tasks from a phase the user didn't select (parallel), or split solo work across
+  more than one branch or PR.
 - `stax sync` / `stax sweep` unasked (they delete branches in bulk — retire merged lanes
   one task at a time instead).
 - Let a crewmate push or open PRs before the parallel Step 7.4 handoff — after it, pushing
@@ -203,7 +227,10 @@ sections that own them — these are the lines you never cross:
 
 Before the dispatch gate:
 
-- [ ] Plan resolved; phase selected; executed tasks skipped
+- [ ] Plan resolved — or, with no structured plan, bd-plan run to a saved plan; phase
+      selected; executed tasks skipped
+- [ ] `bd-decision-log` loaded and an `execute:start` row written; its one-line summary
+      shown at the gate
 - [ ] Plan-mode state noted, so the gate uses `ExitPlanMode` (in plan mode) or
       `AskUserQuestion` (not) — one gate, never both, and `EnterPlanMode` never called
 - [ ] Execution mode presented at the gate (solo inline vs parallel crew) with a recommended
