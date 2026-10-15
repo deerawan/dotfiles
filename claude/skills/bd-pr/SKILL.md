@@ -70,7 +70,7 @@ Use it as the exact base for the body: keep its headings and their order, and ma
 2. **Solution**, three to five sentences. What changed and why, not how. The reviewer can read how. No paragraph runs past three sentences: when Solution needs more, write a one-sentence lead, then one bullet per distinct fact (query, auth, UI, what's deliberately not done).
 3. **Acceptance Criteria** and **Testing**, one line per checkbox. Never a paragraph inside a checkbox.
 4. **Resources**: ticket, design doc, dependent PRs. Link the published design doc, not a local `*.md` path.
-5. **Demo/Screenshots** (use whatever heading the repo's template uses), in the body, not a comment. See below. If there's no user-visible change, one line saying so.
+5. **Demo/Screenshots** (use whatever heading the repo's template uses), in the body, not a comment. See below. Every PR shows evidence there, including non-UI changes.
 
 Reuse the commit message. A well-written commit already leads with the decision and explains the why, so the Problem and Solution sections are usually that message lightly edited.
 
@@ -136,7 +136,7 @@ The cap is on volume, not placement:
 
 - **In the body:** up to about three images, or one short recording, showing the change itself. Before/after pairs count as one. Text evidence is a visible summary (table or bullets), never a collapsed `<details>` block.
 - **In a comment:** full walkthroughs, per-state galleries, multi-viewport sets, raw automated browser-test runs. Leave one line in the section pointing at the comment.
-- **No user-visible change:** say exactly that in one line. Don't delete the heading, and don't pad it with an explanation of why there's nothing to show.
+- **No user-visible change:** still show evidence. Use screenshots of the source system next to the resulting record, or a short before/after table of test or deployed results. A line saying "no user-visible change" alone is never enough.
 
 Never move a demo/screenshot section the user added by hand out of the body, and never replace their screenshots with your own description of them.
 
