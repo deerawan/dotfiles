@@ -168,7 +168,11 @@ Show, for the selected phase:
   worktree) and cap;
 - **Solo inline** shape — every remaining task across all phases, the single branch name off
   trunk, and the dependency order the tasks run in, all in the current worktree, ending in one
-  PR. Name any plan checkpoints solo will run through without pausing.
+  PR. Name any plan checkpoints solo will run through without pausing, and say their checks
+  run once at the end, before the PR;
+- every unresolved Open Question in the plan, with the tasks that depend on it. Each needs an
+  answer at this gate before any dependent task runs. "Defer" is a valid answer and drops the
+  dependent tasks from this run. Never resolve an Open Question by running its task.
 
 Recommend a default: **solo** when the remaining work is one task, or a few tightly-coupled
 tasks that share files or form a clear sequential chain; **parallel** when the tasks are

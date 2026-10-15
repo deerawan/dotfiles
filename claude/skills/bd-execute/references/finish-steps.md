@@ -43,8 +43,11 @@ checks them, and in crew mode `write-status.sh done` refuses without them.
      faithfully — every heading in its original order, and every HTML comment marker
      verbatim**, including ones that look like empty placeholders: CI can inject content into
      those markers, and dropping them silently breaks it.
-   - **Demo/Screenshots section** (whatever heading the template uses): screenshots or a
-     recording for a UI change, or one line saying there's no user-visible change. Never empty.
+   - **Demo/Screenshots section** (whatever heading the template uses): every PR shows
+     evidence here. A UI change gets screenshots or a recording. A non-UI change gets
+     screenshots of the source system next to the resulting record, or a short before/after
+     table of test or deployed results.
+     "No user-visible change" alone is never enough.
      Reference each file as `![alt](./<name>)`, a bare filename relative to your worktree's
      `.playwright-cli/recordings/` — the lead posts from that folder with `--attach`, and any
      other path ships as a broken image.

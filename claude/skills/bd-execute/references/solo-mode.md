@@ -13,12 +13,17 @@ write-back at the end. The crew steps (`parallel-mode.md`) do not apply.
    `<plan-slug>`. ≤ 40 chars. If the
    worktree isn't clean, stop and hand it back — never build on someone else's uncommitted work.
 2. **Implement task by task, in dependency order** across every phase (the topological order
-   from SKILL.md Step 2, run sequentially — waves and checkpoints don't pause the run). For EACH task, follow [worker-brief.md](worker-brief.md)
+   from SKILL.md Step 2, run sequentially — waves and checkpoints don't pause the run). A
+   checkpoint's pause is skipped, not its checks: collect every check the plan's checkpoints
+   list (deployed repro, scenario re-run, human review) and run them all once, after the last
+   task, as part of step 3. For EACH task, follow [worker-brief.md](worker-brief.md)
    "How to work" steps 1–3 (guidance chain, test-first, verification gate). The verification
    gate must be green before the next task starts. Any departure from the plan — a file
    outside `Files:`, a changed signature, a plan assumption the code disproved — gets an
    `execute:deviation` row in the decision log as it happens.
-3. **Finish steps**, once, on the whole diff: follow [finish-steps.md](finish-steps.md)
+3. **Finish steps**, once, on the whole diff. First run the collected checkpoint checks from
+   step 2; one that cannot run is reported to the human as pending, never recorded as
+   `skipped`. Then follow [finish-steps.md](finish-steps.md)
    with `<base>` = `origin/<base>`, `<proof-dir>` = `$(git rev-parse --git-dir)/bd-execute`
    (untracked, per worktree), `<id>` = `solo`, `<pr-template>` = the template found in
    preflight (SKILL.md Step 1.4), `<escalate>` = stop and ask the human.
