@@ -46,6 +46,7 @@ brew "cloc" # lines of code counter
 brew "git-delta" # a better git diff
 brew "entr" # file watcher / command runner
 brew "fd" # find alternative
+brew "ffmpeg" # audio/video converter
 brew "fzf" # Fuzzy file searcher, used in scripts and in vim
 brew "gh" # GitHub CLI
 brew "git" # Git version control (latest version)
