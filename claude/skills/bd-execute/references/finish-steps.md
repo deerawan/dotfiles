@@ -69,14 +69,22 @@ Whoever posts runs this — the crew lead per task (parallel-mode Step 7), or yo
 Inputs: `<pr>` (branch or number, PR already open), `<body>` (the `pr.md` file),
 `<recordings>` (the worktree's `.playwright-cli/recordings/`), `<parent>` (the PR's base).
 
-1. **Post only into an empty body.** `pr.md` is a one-shot handoff; once a PR has a body, the
-   PR is the source of truth — a human may have added screenshots or edited it since. Check
-   the length, never the body, so the text stays out of your context:
+1. **Prepend, never replace.** `pr.md` is a one-shot handoff; once a PR carries its
+   description, the PR is the source of truth — a human may have added screenshots or edited
+   it since. A fresh PR is rarely empty: bots (CI footers, review summaries, badges) write into
+   it within seconds. So check whether the description is already there, not whether the body
+   is empty — the count of `pr.md`'s first heading in the live body:
    ```bash
-   gh pr view <pr> --json body -q '.body | length'   # 0 covers null and empty
+   gh pr view <pr> --json body -q '.body // ""' | grep -cxF "$(grep -m1 '^## ' <body>)"
    ```
-   Non-zero → **leave it alone**; re-applying `pr.md` silently destroys a human's edits. If it
-   genuinely needs changing, invoke `bd-pr`, which fetches the live body and splices.
+   Run it as its own command and read the number before posting — a check chained with the
+   post in one command gates nothing.
+   - `0` → build the file step 3 posts: `pr.md`, then the live body, so bot blocks survive
+     byte-for-byte:
+     `{ cat <body>; echo; gh pr view <pr> --json body -q '.body // ""'; } > <body>.post`.
+     Post `<body>.post` in step 3.
+   - Non-zero → **leave it alone**; re-applying `pr.md` silently destroys a human's edits. If
+     it genuinely needs changing, invoke `bd-pr`, which fetches the live body and splices.
 2. **Check the body before posting** — you are the last gate:
    ```bash
    awk '/PULUMI_PREVIEW_START/{exit} {print}' <body> | wc -w
@@ -89,6 +97,6 @@ Inputs: `<pr>` (branch or number, PR already open), `<body>` (the `pr.md` file),
    (Demo screenshots/recordings) ships broken. From `<recordings>`, attach each ref
    (`grep -o '](\./[^)]*' <body>`); gh rewrites them to CDN URLs in place:
    ```bash
-   cd <recordings> && gh pr edit <pr> --body-file <body> --attach ./<file> [--attach ./<file>…]
+   cd <recordings> && gh pr edit <pr> --body-file <body>.post --attach ./<file> [--attach ./<file>…]
    ```
    Then run `bd-pr`'s post-attach check.
