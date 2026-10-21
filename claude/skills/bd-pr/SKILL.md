@@ -29,7 +29,11 @@ Test it like this: could a reviewer from another squad read Problem and Solution
 
 ## The budget (check this, don't estimate it)
 
-Count before `gh pr create` or `gh pr edit`. Write the body to a file first, then:
+Count before `gh pr create` or `gh pr edit`:
+
+1. Write the body to a file.
+2. Invoke the `bd-technical-writing` skill on Problem, Solution, Acceptance Criteria and Testing, and apply its edits. A passing word count does not replace this step.
+3. Count:
 
 ```bash
 # words in the body you are about to post (strip any bot-managed marker blocks first)
