@@ -18,8 +18,11 @@ one ask.
 
 - Talk about the code, not the person: "this code requests the service twice", never
   "you request…".
-- Ask, don't demand, on naming and judgment calls: "What do you think about `userId`
-  here?" not "Rename this to userId."
+- Ask, don't demand, on naming and judgment calls: "Should we use `userId` here?" not
+  "Rename this to userId."
+- Pronouns: "we" for proposed changes ("should we…"); "I" only for your own opinion or
+  uncertainty; "you" only in a direct question about the author's intent ("did you mean
+  to drop the retry?"), never as the one who did something.
 - No hyperbole (always, never, nothing, endlessly) and no sarcasm.
 - No words about the author's traits (sloppy, careless). Assume they're capable and
   acting in good faith.
@@ -32,8 +35,9 @@ Wrong → Right:
 | Wrong | Right |
 |---|---|
 | "You're requesting the service multiple times, which is inefficient." | "This code requests the service on every render, which is more calls than it needs." |
-| "Rename this variable to userId." | "What do you think about `userId` for this? `id` reads ambiguous next to the order id." |
-| "You never test the error path." | "The error branch looks untested. Worth a case for the throw?" |
+| "Rename this variable to userId." | "Should we use `userId` for this? `id` reads ambiguous next to the order id." |
+| "You never test the error path." | "The error branch looks untested. Should we add a case for the throw?" |
+| "You should cache this." | "Should we cache this? It runs on every request." |
 
 ## Voice + humanizer
 
