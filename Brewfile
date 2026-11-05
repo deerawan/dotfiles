@@ -36,6 +36,7 @@ cask "anki"
 cask "karabiner-elements"
 cask "keyboard-maestro"
 cask "cleanshot"
+cask "crisp" # menu bar display manager
 
 # investment
 cask "tradingview"
