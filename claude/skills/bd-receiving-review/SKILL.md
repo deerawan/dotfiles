@@ -20,7 +20,11 @@ Resolve the PR (the argument, else the current branch's PR via `gh pr view`). Pu
 open thread:
 
 - inline review comments: `gh api repos/<owner>/<repo>/pulls/<n>/comments`
+- general PR comments (the conversation tab): `gh api repos/<owner>/<repo>/issues/<n>/comments`
 - review summaries / states: `gh pr view <n> --json reviews,title,body`
+
+General comments and review summary bodies carry feedback too. Treat each as a row like
+any inline comment.
 
 Read all of it before touching anything. A comment that reads as a blocker may be
 answered by another comment, or by the code itself.
@@ -44,7 +48,7 @@ Build one short table with every comment and show it before any code moves, so t
 sees the scope at once. This is a first read, not the verification: keep it light and save
 the deep check for the row's turn in Step 4.
 
-| # | Comment (`file:line`) | Likely bucket | One-line gist |
+| # | Comment (`file:line`, or `general`) | Likely bucket | One-line gist |
 
 Bucket is exactly one of:
 
@@ -112,7 +116,9 @@ matches, and embedded mode returns only the final text. Templates with no prose 
   per reply and never to manufacture enthusiasm.
 
 Never resolve a review thread — resolving is the reviewer's call, not the author's. Post
-the reply and leave the thread open for the reviewer to close. After addressing "request
+the reply and leave the thread open for the reviewer to close. General comments have no
+thread, so reply with a new PR comment that quotes the line it answers
+(`gh pr comment <n>`). After addressing "request
 changes", re-request review explicitly.
 
 ## Step 7: The gate
