@@ -37,7 +37,7 @@ Count before `gh pr create` or `gh pr edit`:
 
 ```bash
 # words in the body you are about to post (strip any bot-managed marker blocks first)
-wc -w < body.md
+sed '/^```gherkin/,/^```$/d' body.md | wc -w
 # lines of code the PR actually changes
 git diff --shortstat "$(gh pr view --json baseRefName -q .baseRefName)"...HEAD
 ```
@@ -54,7 +54,7 @@ Two hard rules:
 1. The body must be shorter than the diff. Always. If the prose outruns the code, the reviewer either skips the prose (wasting all of it) or reads it instead of the code (worse).
 2. Past 450 words you are writing a log, not a description. Aim for about 300 words on a normal change; that is the target, not the floor.
 
-This is a **word** budget, not a byte budget. Screenshots, recordings and diagrams don't count against it, because they don't consume reading attention the way prose does. Prose is what gets cut.
+This is a **word** budget, not a byte budget. Screenshots, recordings, diagrams and Gherkin scenario blocks don't count against it: the first three don't consume reading attention the way prose does, and scenarios are the test contract reviewers and e2e runners check the change against. Keep scenarios in the Demo/evidence section of the body, never in a comment. Prose is what gets cut.
 
 ## Start from the repo's template
 

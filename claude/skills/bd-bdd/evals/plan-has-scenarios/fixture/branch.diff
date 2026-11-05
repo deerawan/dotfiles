@@ -1,0 +1,88 @@
+diff --git a/src/invoices/InvoiceTable.tsx b/src/invoices/InvoiceTable.tsx
+--- a/src/invoices/InvoiceTable.tsx
++++ b/src/invoices/InvoiceTable.tsx
+@@ -1,20 +1,58 @@
+ import { useState } from 'react';
++import { useMarkInvoicesPaid } from './useMarkInvoicesPaid';
++import { MarkPaidDialog } from './MarkPaidDialog';
++import { toast } from '../ui/toast';
++
++const MAX_BULK = 50;
+
+ export function InvoiceTable({ invoices, role }: Props) {
++  const [selected, setSelected] = useState<string[]>([]);
++  const [dialogOpen, setDialogOpen] = useState(false);
++  const markPaid = useMarkInvoicesPaid();
++  const canSelect = role !== 'viewer';
++  const selectable = invoices.filter((i) => i.status === 'UNPAID');
++
++  async function confirm(paymentDate: string) {
++    const result = await markPaid({ ids: selected, paymentDate });
++    setDialogOpen(false);
++    setSelected([]);
++    if (result.failed.length > 0) {
++      toast.error(`Couldn't mark ${result.failed.map((f) => f.number).join(', ')} as paid`);
++    }
++    if (result.updated.length > 0) {
++      toast.success(`${result.updated.length} invoices marked as paid`);
++    }
++  }
++
+   return (
+     <>
++      {canSelect && selected.length > 0 && (
++        <button
++          data-testid="bulk-mark-paid"
++          disabled={selected.length > MAX_BULK}
++          onClick={() => setDialogOpen(true)}
++        >
++          Mark as paid ({selected.length})
++        </button>
++      )}
++      {selected.length > MAX_BULK && <p role="alert">You can mark up to 50 invoices at a time.</p>}
+       <table>
+         <thead>
+           <tr>
++            {canSelect && (
++              <th>
++                <input type="checkbox" aria-label="Select all on this page"
++                  onChange={(e) => setSelected(e.target.checked ? selectable.map((i) => i.id) : [])} />
++              </th>
++            )}
+             <th>Number</th><th>Customer</th><th>Amount</th><th>Status</th>
+           </tr>
+         </thead>
+         <tbody>
+           {invoices.map((inv) => (
+             <tr key={inv.id}>
++              {canSelect && (
++                <td>
++                  <input type="checkbox" disabled={inv.status !== 'UNPAID'}
++                    aria-label={`Select invoice ${inv.number}`}
++                    checked={selected.includes(inv.id)}
++                    onChange={() => toggle(inv.id)} />
++                </td>
++              )}
+               <td>{inv.number}</td><td>{inv.customer}</td><td>{inv.amount}</td><td>{inv.status}</td>
+             </tr>
+           ))}
+         </tbody>
+       </table>
++      <MarkPaidDialog open={dialogOpen} count={selected.length} defaultDate={today()} onConfirm={confirm} />
+     </>
+   );
+ }
+diff --git a/src/invoices/useMarkInvoicesPaid.ts b/src/invoices/useMarkInvoicesPaid.ts
+new file mode 100644
+--- /dev/null
++++ b/src/invoices/useMarkInvoicesPaid.ts
+@@ -0,0 +1,10 @@
++import { gql, useMutation } from '../api';
++
++const MARK_PAID = gql`
++  mutation MarkInvoicesPaid($ids: [ID!]!, $paymentDate: Date!) {
++    markInvoicesPaid(ids: $ids, paymentDate: $paymentDate) { updated { id } failed { id number reason } }
++  }
++`;
++
++export const useMarkInvoicesPaid = () => useMutation(MARK_PAID);
