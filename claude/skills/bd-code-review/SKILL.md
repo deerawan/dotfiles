@@ -132,7 +132,7 @@ first: `gh pr view <pr> --json author -q .author.login` vs `gh api user -q .logi
 **Equal ⇒ report-only** with the note "comments skipped — you authored this PR" (yolo
 included; commenting on your own PR is noise). **Different ⇒ always draft comments**:
 each finding becomes one inline comment — body drafted per `references/comment-style.md`
-(tone rules, then a humanizer pass in the author's voice) — carrying an id `C1..Cn`, a
+(tone rules, then a `bd-technical-writing` pass) — carrying an id `C1..Cn`, a
 severity prefix, and a full-SHA permalink (blob URL with the full sha1,
 `#L<start>-L<end>`, ≥1 context line each side). Show every draft with its id in the
 report, then **stop for explicit approval before any `gh` write**. At the gate a

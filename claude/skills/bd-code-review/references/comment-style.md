@@ -39,11 +39,9 @@ Wrong → Right:
 | "You never test the error path." | "The error branch looks untested. Should we add a case for the throw?" |
 | "You should cache this." | "Should we cache this? It runs on every request." |
 
-## Voice + humanizer
+## Clarity pass
 
-After drafting every comment, run the whole batch through the humanizer skill
-(`humanizer:humanizer`) in embedded mode — it returns only the final text — with
-`~/.claude/VOICE.md` as the voice reference. Draft first, humanize once over the batch,
-then hand the drafts to the gate. Contractions, no em dashes, restrained emoji, reason
-stated with "because" — the reviewer-side match to bd-receiving-review's author-voice
-replies.
+After drafting every comment, run the whole batch through the `bd-technical-writing`
+skill and apply its edits. Keep the anatomy and tone rules above; where the two disagree,
+those rules win. Draft first, run the pass once over the batch, then hand the drafts to
+the gate.
