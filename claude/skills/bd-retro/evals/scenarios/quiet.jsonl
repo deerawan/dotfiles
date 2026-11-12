@@ -1,0 +1,6 @@
+{"type":"user","timestamp":"2026-01-01T09:00:32.000Z","message":{"role":"user","content":"Fix the typo in the empty-state copy"},"gitBranch":"dev/tf-104-copy-fix"}
+{"type":"assistant","timestamp":"2026-01-01T09:00:33.000Z","message":{"id":"msg-d1","role":"assistant","content":[{"type":"tool_use","id":"d1","name":"Edit","input":{"file_path":"apps/web/src/EmptyState.tsx","old_string":"No ordres yet","new_string":"No orders yet"}}]}}
+{"type":"user","timestamp":"2026-01-01T09:00:34.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"d1","content":"File edited."}]}}
+{"type":"assistant","timestamp":"2026-01-01T09:00:35.000Z","message":{"id":"msg-d2","role":"assistant","content":[{"type":"tool_use","id":"d2","name":"Bash","input":{"command":"npm test -w @acme/web -- EmptyState"}}]}}
+{"type":"user","timestamp":"2026-01-01T09:00:36.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"d2","content":"Tests: 2 passed"}]}}
+{"type":"user","timestamp":"2026-01-01T09:00:37.000Z","message":{"role":"user","content":"thanks, looks good"}}

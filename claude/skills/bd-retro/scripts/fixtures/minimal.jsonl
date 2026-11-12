@@ -1,0 +1,9 @@
+{"type":"user","timestamp":"2026-01-01T00:00:00.000Z","gitBranch":"team/tf-1-sample","message":{"role":"user","content":"Add a sample feature"}}
+{"type":"assistant","timestamp":"2026-01-01T00:00:01.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"t1","name":"Bash","input":{"command":"npm test -w sample"}}]}}
+{"type":"user","timestamp":"2026-01-01T00:00:02.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","is_error":true,"content":"Error: workspace sample not found"}]}}
+{"type":"assistant","timestamp":"2026-01-01T00:00:03.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"t2","name":"Bash","input":{"command":"npm test -w @scope/sample"}}]}}
+{"type":"user","timestamp":"2026-01-01T00:00:04.000Z","message":{"role":"user","content":"no, run it from the package folder instead"}}
+{"type":"assistant","timestamp":"2026-01-01T00:00:05.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"t3","name":"Read","input":{"file_path":"/repo/a/one.ts"}}]}}
+{"type":"user","timestamp":"2026-01-01T00:00:06.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t3","is_error":true,"content":"File does not exist."}]}}
+{"type":"assistant","timestamp":"2026-01-01T00:00:07.000Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"t4","name":"Read","input":{"file_path":"/repo/b/two.ts"}}]}}
+{"type":"user","timestamp":"2026-01-01T00:00:08.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t4","is_error":true,"content":"File does not exist."}]}}

@@ -1,0 +1,80 @@
+{
+  "skill_name": "retro",
+  "mode": "Each scenario is a synthetic session transcript with one planted lesson. Run /retro on it and stop at Step 5: no log line, no worktree, no PR.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "review-round",
+      "prompt": "/bd-retro ~/.claude/skills/bd-retro/evals/scenarios/review-round.jsonl",
+      "files": ["evals/scenarios/review-round.jsonl"],
+      "expected_mode": "single",
+      "expectations": [
+        "Runs a single review and names 3 review_comment and 3 correction",
+        "Proposes a check or skill step that catches new exports without tests before the PR",
+        "Cites the review comments and the corrections with [E#] L#",
+        "Doesn't propose an AGENTS.md line without saying why no check can catch it",
+        "Says how a check that only looks for a test file could pass with an empty test, and closes or scores that gap",
+        "Notes that the review comments were fetched only after three corrections"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "broken-hook",
+      "prompt": "/bd-retro ~/.claude/skills/bd-retro/evals/scenarios/broken-hook.jsonl",
+      "files": ["evals/scenarios/broken-hook.jsonl"],
+      "expected_mode": "single",
+      "expectations": [
+        "Runs a single review and names 1 rule_hit",
+        "Proposes running the Bash hook from an absolute path, for example $CLAUDE_PROJECT_DIR, because it fails from subfolders",
+        "Ranks the broken hook highly, because every session since ran without the guard",
+        "Doesn't propose loosening the hook that blocked the force push"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "pasted-review",
+      "prompt": "/bd-retro ~/.claude/skills/bd-retro/evals/scenarios/pasted-review.jsonl",
+      "files": ["evals/scenarios/pasted-review.jsonl"],
+      "expected_mode": "single",
+      "expectations": [
+        "Names the review_comment and failed_command signals",
+        "Proposes a lint rule against direct @mui/material imports, or drops it as already-enforced with grep evidence",
+        "Drops the mistyped workspace name as one-off"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "quiet",
+      "prompt": "/bd-retro ~/.claude/skills/bd-retro/evals/scenarios/quiet.jsonl",
+      "files": ["evals/scenarios/quiet.jsonl"],
+      "expected_mode": "none",
+      "expectations": ["Prints \"Nothing to learn from this session.\" and stops without a review"]
+    },
+    {
+      "id": 5,
+      "name": "expensive",
+      "prompt": "/bd-retro ~/.claude/skills/bd-retro/evals/scenarios/expensive.jsonl",
+      "files": ["evals/scenarios/expensive.jsonl"],
+      "expected_mode": "single",
+      "expectations": [
+        "Runs a single review and names 5 heavy_result",
+        "Proposes a cheaper way to read CI failures, such as gh run view --log-failed with a line limit",
+        "Mentions the repeated reads of the same file"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "long-session",
+      "prompt": "/bd-retro ~/.claude/skills/bd-retro/evals/scenarios/long-session.jsonl",
+      "files": ["evals/scenarios/long-session.jsonl"],
+      "expected_mode": "deep",
+      "expectations": [
+        "Says it chose deep mode because of the review_comment, correction, and retried_failure thresholds",
+        "Dispatches four reviewers, each given only its slice of the digest, with the Divergent reviewer given the whole digest",
+        "Shows at least three distinct proposals covering: new exports without tests, guessing workspace names instead of looking them up, and fetching CI failures with --log-failed instead of full logs or the user's paste",
+        "Merges duplicates so each lesson appears once",
+        "Every proposal has a Loophole line"
+      ]
+    }
+  ]
+}
