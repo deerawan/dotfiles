@@ -87,6 +87,7 @@ draft, or edit ahead for later rows.
    **Verified:** <what you checked and what it showed — true, false, or partly>
 
    **Proposed fix:** <the change, as a diff or a before/after sketch>   ← or **Why keep as-is:**
+   `path/to/file.ext:line` above each diff block — one block per file touched
 
    **Draft reply:** `<reply from Step 6>`
 
