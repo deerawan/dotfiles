@@ -163,7 +163,11 @@ To land an artifact in the right section rather than appended at the end, refere
    gh pr edit --body-file body.md --attach './recordings/order-list.png#Order list filtered by owner'
    ```
 
-Alt text follows the path after `#`. Video renders as a player and takes no alt text — reference it the same way (`![demo](./recordings/demo.webm)`) and attach `./recordings/demo.webm`. Up to 50 files per command.
+Alt text follows the path after `#`. Up to 50 files per command.
+
+Video (`.webm`, `.mp4`, `.mov`) renders as a player only as a bare `user-attachments` URL alone on its own line, with a blank line before and after. gh rewrites `![demo](./recordings/demo.webm)` to a plain `[demo](URL)` link, which shows as a dead link. Reference the video as `[demo](./recordings/demo.webm)` and attach it, then replace that link with the bare URL on its own line and post the body again with `gh pr edit --body-file`.
+
+Run the command from the directory the `./` paths resolve against. Outside a git checkout, pass the repo inline as `-R owner/repo`; zsh passes a flag held in a variable (`gh $R`) as one argument, so gh can't resolve the repo.
 
 When the PR is already open, follow **Updating an existing body**: fetch the live body, splice the `![]()` reference under the existing heading, then `gh pr edit` with `--body-file` and `--attach`. Don't re-attach an artifact the body already shows.
 
