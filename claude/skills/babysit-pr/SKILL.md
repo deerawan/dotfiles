@@ -70,6 +70,7 @@ Resolve conflicts, re-run the relevant build/test, commit. **→ GATE: pause for
 Delegate the *how* to the `bd-receiving-review` skill (invoke it). For each unresolved thread:
 - **Verify against the codebase first** — is the suggestion correct for *this* repo? Does it break something? Is there a reason for the current code?
 - Decide **Fix / push-back / Escalate**, one item at a time, no performative agreement ("You're absolutely right!" is forbidden).
+- Every thread that needs the user's call is shown in full in `bd-receiving-review`'s Step 4.3 row layout (comment quoted, current code, verification, fix, draft reply) — never as a one-line summary in the report.
 - **Draft** the reply for each thread and show it in the report — do **not** post it. **→ GATE: pause for reply approval.** Only after the user approves, post it in the thread (never as a top-level PR comment):
   ```bash
   gh api repos/<owner>/<repo>/pulls/<pr>/comments/<comment-id>/replies -f body='<reply>'
