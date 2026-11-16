@@ -1,0 +1,14 @@
+Run pnpm turbo run test --filter=...[origin/main]
+@acme/billing:test: FAIL src/invoices/invoice-aging.service.spec.ts
+@acme/billing:test:   ● InvoiceAgingService › bucketFor › puts an invoice due yesterday in the 1-30 bucket
+@acme/billing:test:     expect(received).toBe(expected) // Object.is equality
+@acme/billing:test:     Expected: "1-30"
+@acme/billing:test:     Received: "current"
+@acme/billing:test:       41 |     const invoice = { dueDate: dayjs().subtract(1, 'day').format('YYYY-MM-DD') };
+@acme/billing:test:     > 42 |     expect(service.bucketFor(invoice)).toBe('1-30');
+@acme/billing:test: Tests: 1 failed, 212 passed, 213 total
+@acme/billing:test: ERROR: command finished with error: command (apps/billing) pnpm run test exited (1)
+ Tasks:    14 successful, 15 total
+Failed:    @acme/billing#test
+Error: Process completed with exit code 1.
+# job started 2026-11-16T23:40:12Z on ubuntu-latest (runner TZ=UTC)

@@ -1,0 +1,1 @@
+Budi's PR is red. The CI log is in fixture/ci.log and the code under test is fixture/invoice-aging.service.ts. The test passed locally for Budi (they're in Jakarta, UTC+7) and the PR didn't touch this service. Figure out why the check failed and explain it to Budi so they can decide what to do. Your final message is exactly what Budi sees.
