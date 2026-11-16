@@ -76,7 +76,7 @@ Pushing each fix forces the user to chase remote state. Their working-tree revie
 
 **When you write prose as me, sound like me.**
 
-When you're talking or posting on behalf of Budi - Confluence pages, Jira tickets/comments, PR descriptions, design docs, or long-form Slack posts - read and follow `~/.claude/VOICE.md` first. It defines how I write so the output reads like me, not like AI.
+When you're talking or posting on behalf of Budi - Confluence pages, Jira tickets/comments, or long-form Slack posts - read and follow `~/.claude/VOICE.md` first. It defines how I write so the output reads like me, not like AI.
 
 This doesn't apply to code, code comments, or your own replies to me in chat.
 

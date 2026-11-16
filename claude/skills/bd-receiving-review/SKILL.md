@@ -1,12 +1,12 @@
 ---
 name: bd-receiving-review
-description: Process code-review feedback teammates left on your PR — verify each comment against the codebase before acting, refactor to clarify instead of arguing, and reply in a fixed terse vocabulary written in the author's voice. Use when addressing or responding to review comments on a PR, or when babysit-pr surfaces reviewer comments. Triggers on "address the review", "respond to PR comments", "the reviewer left comments", "bd-receiving-review". Not for giving a review — that is bd-code-review. Not for watching CI or driving a PR to merge — that is babysit-pr.
+description: Process code-review feedback teammates left on your PR — verify each comment against the codebase before acting, refactor to clarify instead of arguing, and reply in a fixed terse vocabulary. Use when addressing or responding to review comments on a PR, or when babysit-pr surfaces reviewer comments. Triggers on "address the review", "respond to PR comments", "the reviewer left comments", "bd-receiving-review". Not for giving a review — that is bd-code-review. Not for watching CI or driving a PR to merge — that is babysit-pr.
 argument-hint: "[PR number/URL, or blank for the current branch's PR]"
 ---
 
 # bd-receiving-review
 
-Turn a teammate's review comments into verified code changes and terse, on-voice
+Turn a teammate's review comments into verified code changes and terse
 replies. Evaluate every comment technically before acting; a comment can be wrong, and
 implementing a wrong suggestion ships a bug. No performative agreement.
 
@@ -110,7 +110,7 @@ one person; clearer code teaches everyone after. Follow the "Code Explains Itsel
 in `~/.claude/CLAUDE.md`: do not add an explanatory comment to answer a review; encode the
 reason in the code, and if it truly can't live in code, anchor it to an issue link.
 
-## Step 6: Reply — fixed vocabulary, author's voice
+## Step 6: Reply — fixed vocabulary
 
 Replies use this vocabulary and nothing looser. The commit SHA is the acknowledgment.
 
@@ -122,11 +122,9 @@ Replies use this vocabulary and nothing looser. The commit SHA is the acknowledg
 | Need clarification | `<specific either/or question>` |
 | No change needed | `Already handled at <file:line>.` |
 
-The free-form parts (the `because` reason, the clarification question) are prose written
-on the author's behalf, so **read `~/.claude/VOICE.md`, then pass the drafted prose through
-the `humanizer:humanizer` skill in embedded mode** — VOICE.md is the writing sample it
-matches, and embedded mode returns only the final text. Templates with no prose (`Fixed in
-<sha>.`) skip it. In practice:
+For the free-form parts (the `because` reason, the clarification question), **invoke the
+`bd-technical-writing` skill on the drafted prose and apply its edits**. Templates with no
+prose (`Fixed in <sha>.`) skip it. In practice:
 
 - One sentence, declarative. Contractions. State the why with "because".
 - A clarification question is specific: "Do you mean X or Y?", not "Can you elaborate?".
