@@ -1,6 +1,6 @@
 # Comment style — posted PR comments
 
-Applies only to the inline comments bd-code-review posts to a teammate's PR. The
+Applies only to the inline comments bd-pr-review posts to a teammate's PR. The
 terminal report is unaffected — keep it terse.
 
 ## Anatomy

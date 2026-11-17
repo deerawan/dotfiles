@@ -149,7 +149,7 @@ changes", re-request review explicitly.
 Drafting is free; publishing is not. The per-comment go-aheads in Step 4 cover the code
 changes; this gate covers publishing. Once the comments are worked, show all drafted
 replies in the terminal, then **stop for explicit approval before any `gh` write**. One
-approval covers posting the batch. Same rule as bd-code-review's comment gate and the
+approval covers posting the batch. Same rule as bd-pr-review's comment gate and the
 "Pause Before Pushing During Review" rule in `~/.claude/CLAUDE.md`: commit fixes locally,
 but never `git push` and never post replies until told.
 

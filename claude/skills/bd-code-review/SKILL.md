@@ -1,7 +1,7 @@
 ---
 name: bd-code-review
 description: Multi-lane adversarial code review with a verification gate — reviews a PR, branch, or working tree against correctness, the originating spec/ticket, repo standards, and (for UI changes with a Figma link) design fidelity, reporting only verified findings by severity. Use when asked to review code, a PR, a branch, or a diff, or as a post-implementation checkpoint from another skill. Triggers on "review this PR", "review my changes", "bd-code-review". Not for reviewing plans or specs — that is plan-review. Not for replying to existing PR feedback — that is babysit-pr.
-argument-hint: "[PR number/URL, ref, or blank for working tree] [incremental] [yolo] [fix]"
+argument-hint: "[PR number/URL, ref, or blank for working tree] [incremental] [fix]"
 ---
 
 # bd-code-review
@@ -14,14 +14,14 @@ note and ignore.
 ```text
 scope → context pack → roster → parallel lanes → per-lane verifier → merge dupes
                                                                           ↓
-                        report (default) | comment (gated) | fix | verdict block
+                                   report (default) | fix | verdict block
 ```
 
 ## Step 1: Resolve scope — fail fast
 
 | Invocation | Scope |
 |---|---|
-| PR number/URL | `gh pr view` (title, body, author) + `gh pr diff` |
+| PR number/URL | `gh pr view` (title, body) + `gh pr diff` |
 | Bare ref/branch | `git diff <ref>...HEAD` (three-dot, merge-base) |
 | No target | working tree + branch: `git diff $(git merge-base origin/<default> HEAD)` |
 | Programmatic (another skill passed SHAs) | `git diff <base>...<head>`; caller may pass a spec/plan path and `incremental` |
@@ -127,24 +127,9 @@ findings: N (critical X / important Y / nitpick Z) · lanes run x/11
 
 **Report (default)** — the skeleton above, in the terminal. Never touches GitHub.
 
-**Comments — automatic on teammates' PRs.** When the target is a PR, check authorship
-first: `gh pr view <pr> --json author -q .author.login` vs `gh api user -q .login`.
-**Equal ⇒ report-only** with the note "comments skipped — you authored this PR" (yolo
-included; commenting on your own PR is noise). **Different ⇒ always draft comments**:
-each finding becomes one inline comment — body drafted per `references/comment-style.md`
-(tone rules, then a `bd-technical-writing` pass) — carrying an id `C1..Cn`, a
-severity prefix, and a full-SHA permalink (blob URL with the full sha1,
-`#L<start>-L<end>`, ≥1 context line each side). Show every draft with its id in the
-report, then **stop for explicit approval before any `gh` write**. At the gate a
-selection posts only the chosen ids — `post all`, `post C1 C3`, `post all except C2` —
-and declining keeps the review terminal-only, so the gate is also the opt-out. The
-`yolo` token is approval for the whole batch given up front: post every draft
-immediately and show what was posted. Post via
-`gh api repos/<owner>/<repo>/pulls/<n>/comments` with `path`/`line`/`commit_id`.
-
 **`fix`** — apply Critical and Important findings marked **`auto-fix`** to the working
 tree; Nitpicks stay report-only. **Never auto-apply an `ask-user` finding**, whatever its
-severity — surface each with what authorizing its remedy would add, and let the author
+severity — surface each with what authorizing its remedy would add, and let the user
 decide. After applying, run the project's test command (discover it from the repo; if none
 is found, note that and skip the guard) — revert any applied hunk that turns the suite red
 and report that finding as still-open. Commit only if asked; **never push**.
@@ -188,9 +173,8 @@ findings `↩︎ unchanged since <date>`. Without the token, every run is a full
 
 - Report a finding that did not pass the verifier, or re-rank findings across lanes.
 - Auto-apply an `ask-user` finding in `fix` mode.
-- Post anything to a PR without the approval gate (or its explicit `yolo` bypass), or
-  outside the teammate-PR comment flow.
-- Comment on a PR the invoking user authored.
-- Push, open PRs, merge, or file tickets — in any mode.
+- Write to GitHub in any mode: no comments, reviews, pushes, PRs, merges, or tickets.
+  Posting review comments is bd-pr-review's job.
+- Name or refer to the PR author in a finding. The code is the subject.
 - Read the full diff into this session — lanes read it; you orchestrate and assemble.
 - Block on a missing source or tool — degrade to Coverage instead.
