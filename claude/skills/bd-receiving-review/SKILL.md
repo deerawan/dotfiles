@@ -94,6 +94,9 @@ draft, or edit ahead for later rows.
    Apply this fix and reply?
    ```
 
+   Fill "What the code does today", "Verified", and "Proposed fix" using
+   bd-explain's layout.
+
    Then stop. Do not touch code until the author says go. The reply's `<sha>` is a
    placeholder, filled in once the commit exists. After committing a row, report it in
    one line (`Row N committed as <sha>.`) and present the next row in full with this
