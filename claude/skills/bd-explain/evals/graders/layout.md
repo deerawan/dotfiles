@@ -4,7 +4,7 @@ criteria: "Can the reader act on this explanation after one read, without asking
 focus: output
 ---
 
-Baseline (no skill, 2026-11-17): review-row used `ReportFindings` without saying what it is, rested "Verified" on a quoted tool description, had no case table, and showed the replaced line with no plain-words fix. design-tradeoff used "outbox", "SKIP LOCKED", "DLQ", "lease" unglossed and added an unrequested 5-item checklist.
+Baseline (no skill, 2026-11-17): refactor-plan (skill without the sketch rule) explained three drifted call sites in prose twice, no sketch. review-row used `ReportFindings` without saying what it is, rested "Verified" on a quoted tool description, had no case table, and showed the replaced line with no plain-words fix. design-tradeoff used "outbox", "SKIP LOCKED", "DLQ", "lease" unglossed and added an unrequested 5-item checklist.
 
 Checks (pass/fail each):
 1. Every identifier, acronym, or term of art is glossed or replaced on first use.
@@ -14,3 +14,4 @@ Checks (pass/fail each):
 5. Ends with one decision question, on its own line.
 6. Scales: quick-fact stays a short direct answer with no layout blocks.
 7. Extra scope (side findings, follow-up work) takes one line at most.
+8. When the point is how several places differ or connect (refactor-plan), a sketch (call tree, file tree, or step-by-place grid) shows it, placed right after the sentence it supports.

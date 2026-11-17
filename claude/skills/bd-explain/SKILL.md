@@ -23,10 +23,25 @@ never learned.
 Build the blocks in this order. Use plain labels. Drop blocks only as
 "Scale it" allows.
 
-1. **How it works today.** Two to four numbered steps, or the smallest sketch
-   that shows the flow: a call tree, pseudocode, or a timeline. Introduce each
-   name with what it does the first time it appears: "`ReportFindings`, a tool
-   the reviewer fills in like a form".
+1. **How it works today.** Two to four numbered steps for a single flow. When
+   the point is how several places differ or connect (files, call sites,
+   steps), draw it instead: a call tree, a file tree, or a step-by-place grid.
+   Put each sketch right after the one sentence it supports, never in a pile
+   at the end. Introduce each name with what it does the first time it
+   appears: "`ReportFindings`, a tool the reviewer fills in like a form".
+
+   Three routes check auth on their own, and one forgot. The fix moves the
+   check up to the router:
+
+   ```diff
+    router
+   +  requireAuth
+      POST   /orders
+   -    checkAuth
+      GET    /orders
+      DELETE /orders
+   -    checkAuth
+   ```
 2. **What's being raised.** One or two sentences in the reader's terms, naming
    who raised it (reviewer, CI, product).
 3. **What I checked.** The evidence in your own words, then the verdict: true,
