@@ -1,0 +1,2 @@
+2026-09-30T17:02:10Z sheet edit reference=ACME-2 user=ops-raj column=qty rows=[8] old=[10] new=[12]
+2026-10-01T09:13:40Z sheet edit reference=ACME-1 user=ops-anna column=externalId rows=[5,6] old=[it_91,it_92] new=[null,null]

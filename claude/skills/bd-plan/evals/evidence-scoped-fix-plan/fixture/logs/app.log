@@ -1,0 +1,4 @@
+2026-10-01T09:14:02Z INFO webhook received events=2 reference=ACME-1
+2026-10-01T09:14:02Z ERROR Duplicate item type on order: FREIGHT reference=ACME-1
+2026-10-02T15:30:11Z INFO webhook received events=3 reference=ACME-2
+2026-10-02T15:30:12Z ERROR Duplicate item type on order: FREIGHT reference=ACME-2

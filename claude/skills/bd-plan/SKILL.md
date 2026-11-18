@@ -139,12 +139,20 @@ Before writing anything, operate read-only in the repo:
 5. **Check reverse dependencies** for any file the work touches in a shared
    package: grep its importers/consumers. This is what makes the Step 0
    reclassify rule's contract surfaces discoverable.
-6. **Explore the codebase instead of asking.** Escalate to the user only where
+6. **Bug with an unproven cause?** Invoke `agent-skills:debugging-and-error-recovery`
+   and run only its Reproduce, Localize and Reduce steps (planning stays read-only).
+   Every link in the suspected cause must trace to runtime evidence, a log line or a
+   data row. Drop any hypothesis that evidence refutes. The fix plan covers only
+   failures that evidence shows. A failure no log line or data row shows goes under
+   Open Questions or out of scope, never into the plan. Ask no design question about a
+   bug until each link has that evidence. If the bug looks like a regression, the `why`
+   skill can trace its history.
+7. **Explore the codebase instead of asking.** Escalate to the user only where
    judgment is genuinely required — including every product-behavior decision
    a bootstrap invented and every artifact conflict — in **one batched
    question round**, each question carrying your recommended answer and its
    main tradeoff.
-7. For any **codebase fact** grounding could not resolve, emit:
+8. For any **codebase fact** grounding could not resolve, emit:
 
 ```text
 ASSUMPTIONS I'M MAKING:
@@ -161,7 +169,7 @@ decisions never go here; they go through the question round above.
 Runs at **Deep** always, and at **Standard** when grounding shows more than one
 viable shape (where logic lives, data model, module boundary, sync vs async).
 Skip at Lightweight — the analogous implementation is the design. Run it before
-the item 6 question round so any product fork it surfaces joins that round.
+the item 7 question round so any product fork it surfaces joins that round.
 
 1. Sketch **at least two structurally distinct candidates** — whole shapes, not
    point tweaks inside one shape. Each gets the caller's usage first, then the

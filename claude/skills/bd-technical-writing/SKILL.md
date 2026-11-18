@@ -55,6 +55,8 @@ Rules from the [Google developer documentation style guide](https://developers.g
 - Don't describe future plans or announce features that do not exist yet. Remove "currently", "new", and "now" when the text must stay true next year.
 - Use the short word: "use", not "utilize". "Before", not "prior to". "Start", not "commence".
 - Call each thing by the name the code, the UI, or the CLI gives it. Don't invent a metaphor for it.
+- Follow a decision or a rule with its reason in the next sentence. A design doc reader asks "why?" right after "what".
+- Make every cross-reference work on its own. Name the target and link it: "Sub-task 4 (Ops deletes an item)", not a bare "Sub-task 4" or "see D3".
 
 ## Pass 4: Make every sentence read one way
 
@@ -83,6 +85,13 @@ Rules from ASD-STE100 Simplified Technical English and Kohl's *The Global Englis
 ## Pass 5: Format for scanning
 
 - **Headings** state the point: "Restore a backup", not "Backups". Use sentence case. A task heading starts with a verb. One H1 per page, and no skipped levels.
+- **Paragraphs** carry one idea. Turn a paragraph into a list when it holds any of these:
+  - Two or more conditions. Introduce them with "only when all of these are true:".
+  - A sequence of steps. Number them.
+  - Two or more rules or checks. Use one bullet each.
+  - A call chain, or a path through more than three code identifiers.
+
+  Test: could you read the paragraph aloud in a review without losing the listener? If not, split it.
 - **Lists.** Number the steps in a sequence. Use bullets for everything else. Introduce a list with a full sentence, and keep its items parallel.
 - **Warnings** stand before the step they guard, with a label for the risk:
   - **Warning:** data loss, a security exposure, or harm to people.
