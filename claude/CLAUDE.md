@@ -60,6 +60,10 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+Before rebutting a review claim or calling a check done, run the case your evidence never exercised (see `rule-test-the-other-case`).
+
+Before a factual claim goes into a PR, comment, commit, Jira, Confluence or Slack, check it at its source; subagent, reviewer and bot claims are leads, not facts (see `rule-verify-before-stating`).
+
 ## 5. Pause Before Pushing During Review
 
 **Commit locally. Push only when told.**
