@@ -256,12 +256,14 @@ S1 (T2) — Export respects the active filter
   When I export the list to CSV
   Then the file contains only unpaid orders, with the columns I can see
   Demonstrable after: Task 4
+  Proved by: E1
 ```
 
 1. **Scenarios span tasks.** One scenario usually needs the schema task, the API
-   task, and the UI task together, so `Demonstrable after` stays `—` until Step 6
-   fills it from the finished phases. That line is the plan's demo schedule and
-   its Step 7 coverage check.
+   task, and the UI task together, so `Demonstrable after` and `Proved by` stay
+   `—` until Step 6 fills them from the finished phases. `Demonstrable after` is
+   the plan's demo schedule. `Proved by` names the evidence rows (Step 5) that
+   walk the scenario on the running system.
 2. **Cover the story's journeys**, not each truth three times: the main path, the
    edge a real user will hit, and any failure the user must be told about.
 3. **The ticket's own scenarios win.** If the story already states Gherkin or
@@ -328,6 +330,14 @@ Each task follows this structure:
 
 **Verification:** [observable outcome + command, e.g. `npm test -- --filter=export`]
 
+**Evidence:** <!-- proof from the running system; see Evidence rules -->
+Before step: [what to capture on the old code first — or `none` (new behavior only)]
+
+| ID | Proves | Run | Tool | Expected |
+|----|--------|-----|------|----------|
+| E1 | S1, T2 | Export the list filtered to "Unpaid" | browser + the downloaded file | Only unpaid rows, visible columns |
+| E2 | T2 | Before and after: export with no filter | browser | Before: all rows. After: all rows (unchanged) |
+
 **Dependencies:** [Task numbers, or None]
 
 **Files:**
@@ -350,6 +360,30 @@ export function exportCsv(rows: Row[], cols: Col[]): Buffer {
 
 **Estimated scope:** [XS | S | M | L — XL means split before proceeding]
 ````
+
+### Evidence rules
+
+Verification says the code is right. Evidence shows the *running system*
+does what the task promised. Tests, lint, and typecheck go under
+Verification. They are never evidence.
+
+1. **Every row names a run, a tool, and an expected result**, so that someone
+   else can repeat it and see pass or fail. The tool is whatever reaches the
+   running system: a browser, an API client, a CLI, a database read, logs,
+   an infra preview, a component explorer. Name the one the repo has.
+2. **Changed behavior gets a before and an after.** A task that alters
+   existing behavior lists a `Before step` and marks its rows "Before and
+   after". Capture the before on the old code before the task's code lands.
+   A purely new feature needs only an after.
+3. **Evidence lives in the task that makes it pass**, so each task (and each
+   PR cut from it) carries its own proof. When a scenario spans tasks, split
+   it into rows per task (`E10a`, `E10b`).
+4. **State setup the run depends on**: which account or role, and how the
+   data gets into the needed state.
+5. **No evidence possible?** Write `Evidence: none — [reason]`. Where the work
+   allows it, add one shared **Evidence conventions** section above the tasks
+   for tools, identities, and the rule for a row that can't run (ask the
+   operator, never swap in other proof silently).
 
 ### Proposed-code rules
 
@@ -415,6 +449,9 @@ built — this is the pass where a thin user story shows its gaps:
 
 - Fill each scenario's `Demonstrable after` with the task or phase that makes it
   true. A scenario nothing makes demonstrable is a missing task.
+- Fill each scenario's `Proved by` with the evidence rows that walk it, from
+  the task its `Demonstrable after` names. A scenario no row walks is missing
+  evidence. When it spans tasks, split the row per task (`E10a`, `E10b`).
 - Add any scenario the decomposition revealed — an empty state, a permission
   case, a partial failure the layering exposed — and mark it
   `(revealed during planning)`.
@@ -444,6 +481,12 @@ judgment belongs to a separate review pass). Run in order:
    tasks (a `clearLayers()` in Task 3 that Task 7 calls `clearFullLayers()` is
    a bug).
 5. **Sizing**: no task is XL or touches more than ~8 files.
+6. **Evidence**: every task has an Evidence table or `Evidence: none — [reason]`.
+   Every task that changes existing behavior has a `Before step` and a
+   before-and-after row. No evidence row is a test, lint, or typecheck run.
+7. **Scenario ↔ evidence**: every scenario's `Proved by` names at least one
+   user-visible evidence row, in the task its `Demonstrable after` names. Every
+   evidence row's `Proves` names a scenario or a truth that exists.
 
 Report findings with severity — **blocker** (fix before saving) vs **warning**
 (note in the plan's Risks section) — then fix blockers inline and move on.
@@ -577,5 +620,7 @@ Before saving, confirm:
 - [ ] Every task follows the Step 5 structure; sketches follow the depth
       gate (field omitted entirely under `--no-code`)
 - [ ] Checkpoints sit at risk boundaries
+- [ ] Every task carries Evidence from the running system (or a reason it
+      can't), with before-and-after rows for changed behavior
 - [ ] Self-check ran; blockers fixed
 - [ ] Saved to `~/.claude/plans/` with a descriptive kebab-case name
