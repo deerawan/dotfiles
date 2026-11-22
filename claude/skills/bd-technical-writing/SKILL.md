@@ -18,6 +18,8 @@ Write so that a reader acts correctly after one read. Work through the six passe
 
 A rewrite that reads better but says something different has failed. This pass outranks every rule after it.
 
+These rules protect a source you rewrite. When you draft from your own notes, findings, or evidence, the notes are raw material, not a source to preserve. Test each fact: would the reader decide or act differently without it? If not, cut it. Give each claim its strongest piece of evidence, not every piece. Name a file only when the reader must open it. State a doubt as the question it raises, not as the mechanism behind it. Certainty still binds: a "likely" stays "likely", and every doubt in your notes survives in some form.
+
 - **Certainty.** Keep how sure the author is, and say it plainly. A requirement becomes a command or "must". A recommendation becomes "We recommend that you...". A possibility becomes "can" or "might". "You should probably restart the worker" becomes "We recommend that you restart the worker", never "Restart the worker". "Results may vary" never becomes "Results vary".
 - **Qualifications.** Keep every limit on a claim: the version, the environment, the sample size, "up to", "only tested on X". A benchmark without its conditions is a different claim.
 - **Nothing new.** Add no step, command, flag, default, page title, or fact that the source does not give.
@@ -92,12 +94,13 @@ Rules from ASD-STE100 Simplified Technical English and Kohl's *The Global Englis
   - A call chain, or a path through more than three code identifiers.
 
   Test: could you read the paragraph aloud in a review without losing the listener? If not, split it.
+- **Lead with the point.** Open a message, a comment, or a section with what the reader must decide or know. The evidence follows. In a review comment or a request, the ask is the subject line, and the body is at most three short paragraphs: what differs, why it matters, what to do.
 - **Lists.** Number the steps in a sequence. Use bullets for everything else. Introduce a list with a full sentence, and keep its items parallel.
 - **Warnings** stand before the step they guard, with a label for the risk:
   - **Warning:** data loss, a security exposure, or harm to people.
   - **Caution:** damage you can recover from, such as a failed deploy.
   - **Note:** information only. A note never holds a step.
-- **Code.** Put commands, paths, flags, and identifiers in code font. Show placeholders in capitals, such as `BACKUP_ID`, and say what each one stands for. Make every count or file tree true at the commit that lands it.
+- **Code.** Put commands, paths, flags, and identifiers in code font. Name only the ones the reader will type or search for. Say the rest in words, such as "a relation" for `@OneToOne({ entity: () => LegacyCompany, primary: true })`. Keep to about two code spans per sentence. Show placeholders in capitals, such as `BACKUP_ID`, and say what each one stands for. Make every count or file tree true at the commit that lands it.
 - **UI elements** are bold, with their exact label.
 - **Links** say where they go. Never "click here". Point to the screen by name, not by position or color.
 
