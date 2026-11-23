@@ -42,7 +42,9 @@ One cheap pass, handed to every reviewer:
 - **Spec discovery**, in order: Jira key in branch name or commit messages → plan file
   (`~/.claude/plans/`, key-prefixed filenames like `vp-4487-…`, then `docs/`) → PR
   body. Fetch tickets via the Atlassian MCP (`getJiraIssue`) — never `twg`, never `gh`.
-- **Figma discovery** — a Figma URL in the ticket, PR body, or plan file.
+- **Figma discovery**, in order: PR body → plan file → ticket → the ticket's parent
+  (epic or story, from `getJiraIssue`'s `parent` field). Check the description and
+  comments of each ticket. Stop at the first Figma URL and record where it came from.
 
 A source that isn't found is recorded for the Coverage section, not an error.
 

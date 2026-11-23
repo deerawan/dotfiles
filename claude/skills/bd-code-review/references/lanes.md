@@ -162,7 +162,7 @@ sentence.
 ## Lane: design-fidelity
 
 Trigger: UI files (components, styles, templates) touched AND a Figma URL was
-discovered in the ticket, PR body, or plan.
+found by Step 2's Figma discovery.
 Skip when: either half missing, or the Figma MCP tools are unavailable →
 Coverage: "design fidelity — skipped, <reason>".
 
