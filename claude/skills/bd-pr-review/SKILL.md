@@ -1,12 +1,12 @@
 ---
 name: bd-pr-review
 description: >-
-  Review a teammate's pull request so the reader understands it before judging
-  it: a plain-words orientation (why, what changes, behavior before and after,
-  key changes, reading order), then a full bd-code-review, then inline comment
-  drafts behind an approval gate. Run manually as /bd-pr-review <PR>.
+  Use ONLY when the user names this skill explicitly, as `/bd-pr-review <PR>` or
+  "run bd-pr-review on <PR>". Reviews a teammate's pull request: a plain-words
+  orientation, then bd-code-review, then inline comment drafts added to the
+  user's pending review after approval. Never trigger on a general request to
+  review a PR or code; that is bd-code-review.
 argument-hint: "<PR number or URL> [yolo]"
-disable-model-invocation: true
 ---
 
 # bd-pr-review
