@@ -169,9 +169,9 @@ Write it in the author's voice (`~/.claude/VOICE.md`).
 
 All M threads have replies. X are fixed and Y are kept as-is with a reason in the thread.
 
-| Change | Commit | Evidence |
-| --- | --- | --- |
-| <what changed>, because <why>. | <sha> | <what ran and what it showed, with a link> |
+| Review | Change | Commit | Evidence |
+| --- | --- | --- | --- |
+| [<reviewer>](<thread permalink>) | <what changed>, because <why>. | <sha> | <what ran and what it showed, with a link> |
 
 <Open follow-up>, tracked in [<TICKET>](<url>).
 
@@ -196,6 +196,8 @@ All M threads have replies. X are fixed and Y are kept as-is with a reason in th
 - One run can back several rows, as long as each row says what it showed for that fix.
 - A row with no possible evidence says `No evidence: <reason>`. Never leave the cell empty.
 - Every number comes from what you ran. Leave out what you can't verify.
+- Review links each thread the row answers, by reviewer name. A fix that answers two
+  threads links both.
 - Kept-as-is threads stay in their threads, not in the table.
 - Screenshots and recordings go in the Evidences section under the table, one `####`
   heading per row, and the row's Evidence cell links to that heading. Leave the section
