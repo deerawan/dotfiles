@@ -141,11 +141,11 @@ Before writing anything, operate read-only in the repo:
    reclassify rule's contract surfaces discoverable.
 6. **Bug with an unproven cause?** Invoke `agent-skills:debugging-and-error-recovery`
    and run only its Reproduce, Localize and Reduce steps (planning stays read-only).
-   Every link in the suspected cause must trace to runtime evidence, a log line or a
-   data row. Drop any hypothesis that evidence refutes. The fix plan covers only
-   failures that evidence shows. A failure no log line or data row shows goes under
-   Open Questions or out of scope, never into the plan. Ask no design question about a
-   bug until each link has that evidence. If the bug looks like a regression, the `why`
+   Every link in the suspected cause must trace to a reproduction, a log line or a
+   data row. Drop any hypothesis they refute. The fix plan covers only failures they
+   show. A failure no reproduction, log line or data row shows goes under Open
+   Questions or out of scope, never into the plan. Ask no design question about a
+   bug until each link has that trace. If the bug looks like a regression, the `why`
    skill can trace its history.
 7. **Explore the codebase instead of asking.** Escalate to the user only where
    judgment is genuinely required — including every product-behavior decision
@@ -331,12 +331,12 @@ Each task follows this structure:
 **Verification:** [observable outcome + command, e.g. `npm test -- --filter=export`]
 
 **Evidence:** <!-- proof from the running system; see Evidence rules -->
-Before step: [what to capture on the old code first — or `none` (new behavior only)]
+Before step: none (new behavior only)  <!-- or what to capture on the old code first -->
 
 | ID | Proves | Run | Tool | Expected |
 |----|--------|-----|------|----------|
 | E1 | S1, T2 | Export the list filtered to "Unpaid" | browser + the downloaded file | Only unpaid rows, visible columns |
-| E2 | T2 | Before and after: export with no filter | browser | Before: all rows. After: all rows (unchanged) |
+| E2 | T3 | Export while the export endpoint returns an error | browser | Error state shown; no file downloads |
 
 **Dependencies:** [Task numbers, or None]
 
@@ -444,6 +444,14 @@ phase end — never every N tasks:
 ~50% of an executor's context (many files, heavy discovery, complex domains),
 split into sequential plan files, each independently executable.
 
+**Execution mode.** Write one line under Overview:
+`**Execution:** single-pr — <reason>` when the plan touches ≤10 distinct files across
+all `Files:` lists (generated files and lockfiles don't count) and no checkpoint asks
+for human review. Otherwise
+`**Execution:** stack — <reason>`: one PR per task, stacked on its parent; tasks in a
+phase run in parallel when their `Files:` are disjoint. bd-execute follows this line;
+running it on the saved plan is the operator's approval.
+
 **Then reconcile the scenarios** (Step 3) against the decomposition you just
 built — this is the pass where a thin user story shows its gaps:
 
@@ -487,6 +495,8 @@ judgment belongs to a separate review pass). Run in order:
 7. **Scenario ↔ evidence**: every scenario's `Proved by` names at least one
    user-visible evidence row, in the task its `Demonstrable after` names. Every
    evidence row's `Proves` names a scenario or a truth that exists.
+8. **Execution line**: present under Overview, and its value follows Step 6's
+   Execution mode rule.
 
 Report findings with severity — **blocker** (fix before saving) vs **warning**
 (note in the plan's Risks section) — then fix blockers inline and move on.
@@ -494,8 +504,8 @@ Do not emit a verdict on your own plan.
 
 ## Step 8: Review, Save, Hand Off
 
-No approval gate. The plan-review pass stands in for it; the operator's next
-approval is bd-execute's dispatch gate.
+No approval gate. The plan-review pass stands in for it; the operator approves by
+running bd-execute on the saved plan.
 
 ### 8a. Review and autofix — `plan-review`
 
@@ -527,7 +537,7 @@ Do the re-run / `.vN` snapshot handling below at this point, after 8a's fixes.
 ```markdown
 # Implementation Plan: [Name]
 
-## Overview            <!-- one paragraph -->
+## Overview            <!-- one paragraph, then: **Execution:** single-pr | stack — <reason> (Step 6) -->
 ## Sources             <!-- ticket, tech doc, design file — linked, never re-described -->
 ## Global Constraints  <!-- verbatim from Step 1; every task inherits -->
 ## Assumptions         <!-- from Step 1, if any -->
@@ -557,7 +567,8 @@ completed checkboxes only for tasks whose body is unchanged — a revised task
 gets un-checked — and append what changed to Revision History.
 
 **Handoff — offer, don't perform:**
-- execution (this session or a fresh one, plan file as the prompt)
+- execution (this session or a fresh one, plan file as the prompt), naming the
+  Execution value
 
 ---
 
