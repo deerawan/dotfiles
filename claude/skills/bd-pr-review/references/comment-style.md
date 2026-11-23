@@ -15,6 +15,8 @@ terminal report is unaffected — keep it terse.
 ```suggestion
 <replacement lines, only when the fix fits the commented lines>
 ```
+
+Design: [<design element name>](<Figma URL with node-id>)
 ````
 
 | Severity | Badge |
@@ -33,6 +35,10 @@ greeting, praise, or closing note.
   must stand alone, so name the function or field instead of "this" or "it". Use a
   `suggestion` block only when the replacement lines are the commented lines, so
   one click or one agent step applies it.
+- When the finding compares the code with a design, end the comment with a
+  `Design:` line that links the exact Figma node the comparison used (its URL with
+  `node-id`), named by the element, such as `Design: ["Back to Search" button](…)`.
+  Leave the line out when no design was used.
 
 Wrong → Right:
 
