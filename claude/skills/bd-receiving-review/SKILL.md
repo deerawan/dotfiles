@@ -11,7 +11,7 @@ replies. Evaluate every comment technically before acting; a comment can be wron
 implementing a wrong suggestion ships a bug. No performative agreement.
 
 ```text
-gather → prior-feedback check → overview table → for each row: verify → propose + draft reply → author OKs → fix → commit → next row → publish gate
+gather → prior-feedback check → overview table → for each row: verify → propose + draft reply → author OKs → fix → commit → next row → publish gate → round summary
 ```
 
 ## Step 1: Gather the comments
@@ -148,10 +148,63 @@ changes", re-request review explicitly.
 
 Drafting is free; publishing is not. The per-comment go-aheads in Step 4 cover the code
 changes; this gate covers publishing. Once the comments are worked, show all drafted
-replies in the terminal, then **stop for explicit approval before any `gh` write**. One
-approval covers posting the batch. Same rule as bd-pr-review's comment gate and the
+replies, the drafted Step 8 summary and the evidence plan for each fix (naming the tool
+it will use) in the terminal,
+then **stop for explicit approval before any `gh` write**. One approval covers pushing and
+posting the batch. Same rule as bd-pr-review's comment gate and the
 "Pause Before Pushing During Review" rule in `~/.claude/CLAUDE.md`: commit fixes locally,
 but never `git push` and never post replies until told.
+
+If a fix needs CI or a deploy to prove it, push first, run the evidence, then post. Re-check
+each reply and the summary against what ran, and correct any claim it doesn't support.
+
+## Step 8: Round summary with evidence
+
+After the replies are posted, add one new PR comment for the round. Its job is to prove
+each fix works without breaking what the PR set out to do. Never edit an earlier summary.
+Write it in the author's voice (`~/.claude/VOICE.md`).
+
+```markdown
+## Review round N changes
+
+All M threads have replies. X are fixed and Y are kept as-is with a reason in the thread.
+
+| Change | Commit | Evidence |
+| --- | --- | --- |
+| <what changed>, because <why>. | <sha> | <what ran and what it showed, with a link> |
+
+<Open follow-up>, tracked in [<TICKET>](<url>).
+
+### Evidences
+
+#### Row 1: <change>
+
+| Before | After |
+| --- | --- |
+| ![<alt>](./before.png) | ![<alt>](./after.png) |
+```
+
+- Evidence is something that ran against the changed code: a CI run, a dry run, a browser
+  recording, a query result, a deployed log. A passing unit test, lint or typecheck alone
+  is not evidence.
+- Before collecting evidence, find the repo's own tools and use them first: tester agents
+  in `.claude/agents/`, skills in `.claude/skills/` and `<app>/.claude/skills/run-*`,
+  and any testing section in `AGENTS.md` or `CLAUDE.md`. Pick the tool by change type,
+  for example a browser tester for UI or a migration tester for SQL. When the repo has
+  none, use the closest direct proof: a workflow run, a dry run or command output.
+- When a fix changes existing behavior, show it before and after.
+- One run can back several rows, as long as each row says what it showed for that fix.
+- A row with no possible evidence says `No evidence: <reason>`. Never leave the cell empty.
+- Every number comes from what you ran. Leave out what you can't verify.
+- Kept-as-is threads stay in their threads, not in the table.
+- Screenshots and recordings go in the Evidences section under the table, one `####`
+  heading per row, and the row's Evidence cell links to that heading. Leave the section
+  out when there are none.
+- Post with `gh pr comment --body-file <file> --attach '<file>#<alt>'`, referencing each
+  image as `![alt](./<file>)`. Put each video's bare `user-attachments` URL alone on its
+  own line.
+- After posting, re-read the comment. If any `./` reference is left, edit that comment once
+  to swap in the uploaded URLs. This repair is the only allowed edit of a summary.
 
 ## Never
 
@@ -165,4 +218,5 @@ but never `git push` and never post replies until told.
 - Add an explanatory comment to settle a review instead of refactoring.
 - Post replies or push without the approval gate.
 - Resolve a review thread — that is the reviewer's call.
+- Post a round summary without evidence for each fix.
 - Argue about a reviewer's tone in the thread — raise that privately, off the PR.
