@@ -5,14 +5,40 @@ terminal report is unaffected — keep it terse.
 
 ## Anatomy
 
-```
-[<Severity>] <one-line subject: what, and where>
+````markdown
+<badge> **<Severity>** · <one-line subject: what goes wrong>
 
-<why it matters, 1–2 sentences, then the concrete fix or the open question.>
+<what the reader or user loses, 1–2 sentences, quoting the value they see today.>
+
+**Fix:** <the concrete change, naming the symbol it touches.>
+
+```suggestion
+<replacement lines, only when the fix fits the commented lines>
 ```
+````
+
+| Severity | Badge |
+|---|---|
+| Critical | 🔴 |
+| Important | 🟡 |
+| Nitpick | 💡 |
 
 Severity is the finding's existing **Critical / Important / Nitpick**. One comment,
-one ask.
+one ask. Use **Question:** instead of **Fix:** when the ask is about intent. Add no
+greeting, praise, or closing note.
+
+- Say what the reader or user loses, not only what the code does. Quote the message
+  or value they see today.
+- Write for the author's coding agent as well as the author: the `**Fix:**` line
+  must stand alone, so name the function or field instead of "this" or "it". Use a
+  `suggestion` block only when the replacement lines are the commented lines, so
+  one click or one agent step applies it.
+
+Wrong → Right:
+
+| Wrong | Right |
+|---|---|
+| "`read_misfit_reason` returns the reason, but this code only checks it for None." | "🟡 **Important** · Upload error hides the misfit reason. A user who uploads a file with an empty `age` column sees `Upload failed`, but `read_misfit_reason` already returns `column 'age' is empty`. **Fix:** put the reason from `read_misfit_reason` in the error message." |
 
 ## Tone
 
