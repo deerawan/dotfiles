@@ -114,6 +114,12 @@ setup_symlinks() {
         create_symlink "$hook" "$HOME/.claude/hooks/$(basename "$hook")"
     done
 
+    # Claude Code mods, loaded via CLAUDE_CODE_PLUGIN_DIRS in claude/settings.json.
+    mkdir -p "$HOME/.claude/mods"
+    for mod in "$DOTFILES"/claude/mods/*/; do
+        create_symlink "${mod%/}" "$HOME/.claude/mods/$(basename "$mod")"
+    done
+
 }
 
 setup_xcode() {

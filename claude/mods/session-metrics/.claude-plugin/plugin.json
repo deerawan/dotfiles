@@ -1,0 +1,1 @@
+{ "name": "session-metrics", "version": "0.1.1", "description": "Band above the prompt: session tokens, weekly tokens, estimated cost, and the branch's PR link", "types": "./types/index.d.ts" }
