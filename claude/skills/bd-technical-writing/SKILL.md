@@ -100,7 +100,7 @@ Rules from ASD-STE100 Simplified Technical English and Kohl's *The Global Englis
   - **Warning:** data loss, a security exposure, or harm to people.
   - **Caution:** damage you can recover from, such as a failed deploy.
   - **Note:** information only. A note never holds a step.
-- **Code.** Put commands, paths, flags, and identifiers in code font. Name only the ones the reader will type or search for. Say the rest in words, such as "a relation" for `@OneToOne({ entity: () => LegacyCompany, primary: true })`. Keep to about two code spans per sentence. Show placeholders in capitals, such as `BACKUP_ID`, and say what each one stands for. Make every count or file tree true at the commit that lands it.
+- **Code.** Put commands, paths, flags, and identifiers in code font. Name only the ones the reader will type or search for. Say the rest in words, such as "a relation" for `@OneToOne({ entity: () => Customer, primary: true })`. Keep to about two code spans per sentence. Show placeholders in capitals, such as `BACKUP_ID`, and say what each one stands for. Make every count or file tree true at the commit that lands it.
 - **UI elements** are bold, with their exact label.
 - **Links** say where they go. Never "click here". Point to the screen by name, not by position or color.
 
