@@ -16,6 +16,7 @@ Find open tickets that are **quick to ship and worth shipping**, and say why for
 | 3. Screen | state loaded; cheap metadata pass → shortlist of ≤ 25 |
 | 4. Assess | effort, impact, readiness (drafted AC where missing), with evidence |
 | 5. Report | ranked file + chat summary; state saved |
+| 6. Cards | task card per top-3 pick |
 
 ## Phase 1: Resolve
 
@@ -132,7 +133,8 @@ Findings persist in `~/.claude/bd-quick-wins/state.json`, one entry per ticket e
       "openQuestions": [],
       "firstSeen": "2026-11-23",
       "lastSeen": "2026-11-30",
-      "timesListed": 2
+      "timesListed": 2,
+      "cardProposed": "2026-11-30"
     }
   }
 }
@@ -146,7 +148,17 @@ Findings persist in `~/.claude/bd-quick-wins/state.json`, one entry per ticket e
 - A ticket listed 4+ runs and still untouched gets a note in the report: it keeps qualifying but nobody picks it up, so it may need a conversation, not a reminder.
 - The dated `.md` reports are history for the user to read; the skill reads only `state.json`.
 
-End with one line offering to assign the unassigned picks to the user and post any drafted AC. Do that only on an explicit yes in an interactive session.
+End with one line offering to assign the unassigned picks to the user and post any drafted AC.
+
+## Phase 6: Task cards for the top picks
+
+Propose the top 3 picks as task cards so the user can start one with a click. Use `start_session` with `initiation: "own_initiative"`, `context: "fresh"`, `use_worktree: true`, one call per pick (the app shows at most three per turn). A card starts nothing until the user clicks it and expires after 7 days, so a weekly run never leaves old cards behind. Proposing is allowed in a scheduled run.
+
+- `title`: `<KEY> <short summary>`, under 60 chars.
+- `prompt`: the `chip-prompt` line from `~/.claude/bd-quick-wins/config.md` with `{key}` replaced (default `Implement {key}`), then a self-contained brief: what to change and where (the code facts from Phase 4), the acceptance criteria to meet, and the constraints from the ticket. For a drafted-AC pick, say to post the AC after the user approves the text, before writing code. For an unassigned pick, say to ask before assigning it.
+- `background`: why it's a quick win (effort and impact reasons) and the report path.
+
+Skip a pick that already has a card from a previous run still waiting (the state file's `cardProposed` date is under 7 days old). Record `cardProposed: <date>` on each pick you propose. If `start_session` isn't available, say so in the report and stop there. Do that only on an explicit yes in an interactive session.
 
 ## Schedule (only when the user asks to set up the routine)
 
