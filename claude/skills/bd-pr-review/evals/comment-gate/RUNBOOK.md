@@ -33,8 +33,10 @@ Run it by hand after any change to SKILL.md's comment flow or the approval gate.
 
 ## Worktree
 
-- On a clean `claude/pr-review-*` worktree, Step 1 runs `git checkout --detach
-  <headRefOid>` and local links open files the PR adds.
+- On a clean `claude/pr-review-*` worktree, Step 1 runs `gh pr checkout <n>`, local
+  links open files the PR adds, and the session-metrics band shows the PR.
+- Push a commit to PR A after the drafts are shown: before posting, the skill pulls,
+  checks the selected drafts against the new HEAD, and posts on that commit.
 - On a dirty worktree, there is no checkout; drafts show permalinks only, with the reason.
 
 ## Pass condition

@@ -27,15 +27,18 @@ Stop with the reason if the PR isn't open or is a draft. Compare the author with
 `gh api user -q .login`. If you wrote it, say so, run Step 3 only, and stop:
 orientation is for code you didn't write, and commenting on your own PR is noise.
 
-Put the review worktree at the PR head, so local links open files the PR adds
-and their line numbers match the comments. Do this only when `git status
---porcelain` is empty and the branch belongs to this review (for example
-`claude/pr-review-*`):
+Check out the PR's branch in the review worktree, so local links open files the
+PR adds, their line numbers match the comments, and `gh pr view` with no number
+finds the PR. Do this only when `git status --porcelain` is empty and the branch
+belongs to this review (for example `claude/pr-review-*`):
 
 ```bash
-git fetch origin pull/<n>/head
-git checkout --detach <headRefOid>
+gh pr checkout <n>
 ```
+
+If git refuses because the branch is checked out in another worktree, run
+`gh pr checkout <n> -b pr-<n>`. From here on, `headRefOid` is `git rev-parse HEAD`.
+The branch tracks the author's branch, so never push from it.
 
 If the worktree is dirty or is the user's own branch, do not check out. Step 4
 then shows permalinks only and says why.
@@ -83,8 +86,16 @@ terminal-only, so the gate is also the opt-out. The `yolo` token is approval for
 the whole batch given up front: add every draft at once. Nothing is published, so
 the user can check the comments before teammates see them.
 
-Before every post, look for the user's pending review, because GitHub allows only
-one per user per PR:
+Before every post, if Step 1 checked out the PR, get the author's latest commits
+with `git pull --ff-only`. If the author force-pushed, the pull fails; run
+`gh pr checkout <n> --force`. If HEAD moved, check each selected draft again: its
+line still holds the code it quotes and the finding still applies. Then use the
+new HEAD as `headRefOid` in the permalinks and the post. Comments already in the
+pending review stay on the older commit, and GitHub marks them outdated if their
+lines changed.
+
+Then look for the user's pending review, because GitHub allows only one per user
+per PR:
 
 ```bash
 gh api graphql -f query='{repository(owner:"<owner>",name:"<repo>"){pullRequest(number:<n>){id reviews(states:PENDING,first:5){nodes{id author{login}}}}}}'
