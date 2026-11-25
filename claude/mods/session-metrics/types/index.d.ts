@@ -22,6 +22,7 @@ declare module 'claude-code' {
       clockTick: number
       costUsd: number | null
       pullRequest: Shaped<PullRequest | null>
+      sessionPullRequest: string | null
       canCreatePullRequest: boolean
       isCreatingPullRequest: boolean
     }

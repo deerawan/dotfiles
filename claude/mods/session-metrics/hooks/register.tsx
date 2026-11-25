@@ -14,6 +14,11 @@ import type {
 const PULL_REQUEST_CHECK_INTERVAL_MS = 60 * 1000
 const PULL_REQUEST_FIELDS = 'number,url,state,isDraft,reviewDecision,statusCheckRollup'
 const NO_PULL_REQUEST_MESSAGE = 'no pull requests found'
+const PULL_REQUEST_URL = /https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/\d+/
+const GH_COMMAND = /\bgh\s/
+const GH_API_PULL = /\bgh\s+api\s+\S*repos\/([\w.-]+\/[\w.-]+)\/pulls\/(\d+)/
+const GH_PR_NUMBER = /\bgh\s+pr\s+(?:view|checkout|diff|review|comment|edit|ready|merge|checks|close|reopen)\s+#?(\d+)\b/
+const GH_REPO_FLAG = /(?:-R|--repo)[\s=]+([\w.-]+\/[\w.-]+)/
 const CREATE_PULL_REQUEST_PROMPT =
   'Open a draft pull request for the current branch. If this project has a skill for creating pull requests, invoke it and follow its steps instead of running gh pr create yourself; open the PR as a draft either way.'
 const FAILED_CHECK_RESULTS = new Set(['FAILURE', 'TIMED_OUT', 'CANCELLED', 'ACTION_REQUIRED', 'STARTUP_FAILURE', 'ERROR'])
@@ -72,10 +77,13 @@ type GhPullRequest = {
   statusCheckRollup?: GhCheck[] | null
 }
 
+type BashOutput = { gitOperation?: { pr?: { number: number; url?: string } } }
+
 const rateLimits = atom({ plugin: 'session-metrics', key: 'rateLimits' } as const, [])
 const contextWindow = atom({ plugin: 'session-metrics', key: 'contextWindow' } as const, null)
 const costUsd = atom({ plugin: 'session-metrics', key: 'costUsd' } as const, null)
 const pullRequest = atom({ plugin: 'session-metrics', key: 'pullRequest' } as const, null, { shape: 'pr-status-2' })
+const sessionPullRequest = atom({ plugin: 'session-metrics', key: 'sessionPullRequest' } as const, null)
 const canCreatePullRequest = atom({ plugin: 'session-metrics', key: 'canCreatePullRequest' } as const, false)
 const isCreatingPullRequest = atom({ plugin: 'session-metrics', key: 'isCreatingPullRequest' } as const, false)
 const cacheReading = atom({ plugin: 'session-metrics', key: 'cacheReading' } as const, null)
@@ -191,14 +199,38 @@ async function readLocalOffset($: EngineInterface) {
   localOffsetMs = (sign === '-' ? -1 : 1) * (Number(hours) * HOUR_MS + Number(minutes) * MINUTE_MS)
 }
 
+function pullRequestNamedIn(command: string): string | null {
+  if (!GH_COMMAND.test(command)) return null
+  const url = PULL_REQUEST_URL.exec(command)
+  if (url) return url[0]
+  const apiPull = GH_API_PULL.exec(command)
+  if (apiPull) return `https://github.com/${apiPull[1]}/pull/${apiPull[2]}`
+  const numbered = GH_PR_NUMBER.exec(command)
+  if (!numbered) return null
+  const repo = GH_REPO_FLAG.exec(command)
+  return repo ? `https://github.com/${repo[1]}/pull/${numbered[1]}` : numbered[1] ?? null
+}
+
+async function viewPullRequest($: EngineInterface, selector: string[]) {
+  const { exitCode, stdout, stderr } = await $.process.run(['gh', 'pr', 'view', ...selector, '--json', PULL_REQUEST_FIELDS])
+  return { found: exitCode === 0 ? toPullRequest(JSON.parse(stdout)) : null, stderr }
+}
+
 async function refreshPullRequest($: EngineInterface, isForced: boolean) {
   const now = await $.clock.now()
   if (!isForced && now - lastPullRequestCheckAt < PULL_REQUEST_CHECK_INTERVAL_MS) return
   lastPullRequestCheckAt = now
-  const { exitCode, stdout, stderr } = await $.process.run(['gh', 'pr', 'view', '--json', PULL_REQUEST_FIELDS])
-  const found = exitCode === 0 ? toPullRequest(JSON.parse(stdout)) : null
+  const onBranch = await viewPullRequest($, [])
+  const named = onBranch.found ? null : await read($, sessionPullRequest)
+  const found = onBranch.found ?? (named ? (await viewPullRequest($, [named])).found : null)
   await update($, pullRequest, () => found)
-  await update($, canCreatePullRequest, () => stderr.includes(NO_PULL_REQUEST_MESSAGE))
+  await update($, canCreatePullRequest, () => !found && onBranch.stderr.includes(NO_PULL_REQUEST_MESSAGE))
+}
+
+async function rememberPullRequest($: EngineInterface, named: string) {
+  if ((await read($, sessionPullRequest)) === named) return
+  await update($, sessionPullRequest, () => named)
+  await refreshPullRequest($, true)
 }
 
 async function askClaudeToCreatePullRequest($: EngineInterface) {
@@ -242,6 +274,16 @@ export const register: Register = on => {
   on('turn.start', async ($, e, next) => {
     if (!e.agentId && e.text === CREATE_PULL_REQUEST_PROMPT) pullRequestTurnId = e.turnId
     return next(e)
+  })
+
+  on('tool.call', async ($, e, next) => {
+    const ran = await next(e)
+    if (e.tool !== 'Bash') return ran
+    const output = ran.deny === undefined && !ran.isError ? (ran.result as BashOutput) : undefined
+    const operated = output?.gitOperation?.pr
+    const named = operated ? operated.url ?? `${operated.number}` : pullRequestNamedIn(e.command)
+    if (named && !e.agentId) void rememberPullRequest($, named).catch(() => undefined)
+    return ran
   })
 
   on('turn.step', async function* ($, e, next) {
