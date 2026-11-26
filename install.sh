@@ -114,6 +114,12 @@ setup_symlinks() {
         create_symlink "$hook" "$HOME/.claude/hooks/$(basename "$hook")"
     done
 
+    # One link per agent, so ~/.claude/agents can also hold agents kept out of this repo.
+    mkdir -p "$HOME/.claude/agents"
+    for agent in "$DOTFILES"/claude/agents/*.md; do
+        create_symlink "$agent" "$HOME/.claude/agents/$(basename "$agent")"
+    done
+
     # Claude Code mods, loaded via CLAUDE_CODE_PLUGIN_DIRS in claude/settings.json.
     mkdir -p "$HOME/.claude/mods"
     for mod in "$DOTFILES"/claude/mods/*/; do
