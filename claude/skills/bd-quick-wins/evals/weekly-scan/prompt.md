@@ -1,6 +1,6 @@
 # Weekly scan
 
-Run the same prompt with and without the skill against a real Jira site, read-only.
+Run the same prompt with and without the skill against a real Jira site, read-only. For the Linear path see `../linear-backlog/prompt.md`.
 
 Prompt: "Find quick wins in my Jira backlog: open tickets assigned to me or unassigned that are quick to implement and have big impact on the team and company. State the reason why for each. Read-only."
 
