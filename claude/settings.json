@@ -2,7 +2,7 @@
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "CLAUDE_CODE_SUBAGENT_MODEL": "claude-opus-5-5",
-    "CLAUDE_CODE_PLUGIN_DIRS": "~/.claude/mods/session-metrics"
+    "CLAUDE_CODE_PLUGIN_DIRS": "~/.claude/mods/session-metrics:~/.claude/mods/pr-status"
   },
   "permissions": {
     "allow": [

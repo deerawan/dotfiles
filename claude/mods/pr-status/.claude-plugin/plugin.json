@@ -1,0 +1,1 @@
+{ "name": "pr-status", "version": "0.1.0", "author": { "name": "Budi Irawan" }, "description": "Band above the prompt: the branch's PR with draft, checks and approvals", "types": "./types/index.d.ts" }

@@ -1,33 +1,8 @@
 import { atom, read, update } from 'claude-code'
 import type { Color, EngineInterface, Register, SessionContextUsage, TurnUsage } from 'claude-code'
 
-import type {
-  CacheReading,
-  CacheState,
-  ChecksState,
-  ContextWindow,
-  PullRequest,
-  RateLimitWindow,
-  ReviewState,
-} from '../types'
+import type { CacheReading, CacheState, ContextWindow, RateLimitWindow } from '../types'
 
-const PULL_REQUEST_CHECK_INTERVAL_MS = 60 * 1000
-const PULL_REQUEST_FIELDS = 'number,url,state,isDraft,reviewDecision,statusCheckRollup'
-const NO_PULL_REQUEST_MESSAGE = 'no pull requests found'
-const PULL_REQUEST_URL = /https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/\d+/
-const GH_COMMAND = /\bgh\s/
-const GH_API_PULL = /\bgh\s+api\s+\S*repos\/([\w.-]+\/[\w.-]+)\/pulls\/(\d+)/
-const GH_PR_NUMBER = /\bgh\s+pr\s+(?:view|checkout|diff|review|comment|edit|ready|merge|checks|close|reopen)\s+#?(\d+)\b/
-const GH_REPO_FLAG = /(?:-R|--repo)[\s=]+([\w.-]+\/[\w.-]+)/
-const CREATE_PULL_REQUEST_PROMPT =
-  'Open a draft pull request for the current branch. If this project has a skill for creating pull requests, invoke it and follow its steps instead of running gh pr create yourself; open the PR as a draft either way.'
-const FAILED_CHECK_RESULTS = new Set(['FAILURE', 'TIMED_OUT', 'CANCELLED', 'ACTION_REQUIRED', 'STARTUP_FAILURE', 'ERROR'])
-const PENDING_CHECK_STATES = new Set(['PENDING', 'EXPECTED'])
-const REVIEW_STATES: Record<string, ReviewState> = {
-  APPROVED: 'approved',
-  CHANGES_REQUESTED: 'changes-requested',
-  REVIEW_REQUIRED: 'review-required',
-}
 const WARNING_PERCENT = 50
 const DANGER_PERCENT = 80
 const MINUTE_MS = 60 * 1000
@@ -36,67 +11,29 @@ const HOUR_MS = 60 * MINUTE_MS
 const DAY_MS = 24 * HOUR_MS
 const WARM_HIT_PERCENT = 80
 const COLD_HIT_PERCENT = 20
-const CACHE_BADGES: Record<CacheState | 'expired', { icon: string; color: Color }> = {
-  warm: { icon: '🔥', color: 'success' },
-  partial: { icon: '🌤️', color: 'warning' },
-  cold: { icon: '🧊', color: 'error' },
-  expired: { icon: '💤', color: 'subtle' },
+const DESKTOP_DIVIDER = 'rgba(128, 128, 128, 0.45)'
+const DIVIDER = '  │  '
+const CACHE_COLORS: Record<CacheState | 'expired', Color | null> = {
+  warm: null,
+  partial: null,
+  cold: 'warning',
+  expired: 'subtle',
 }
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const LIMIT_LABELS: Record<string, string> = { five_hour: '⏱️ 5h', seven_day: '📅 wk' }
-const PULL_REQUEST_COLORS: Record<string, Color> = { OPEN: 'success', MERGED: 'merged', CLOSED: 'error' }
-const CHECKS_BADGES: Record<ChecksState, { text: string; color: Color } | null> = {
-  passing: { text: '✅ CI', color: 'success' },
-  failing: { text: '❌ CI', color: 'error' },
-  pending: { text: '⏳ CI', color: 'warning' },
-  none: null,
-}
-const REVIEW_BADGES: Record<ReviewState, { text: string; color: Color } | null> = {
-  approved: { text: '👍 approved', color: 'success' },
-  'changes-requested': { text: '✋ changes requested', color: 'error' },
-  'review-required': { text: '👀 needs review', color: 'subtle' },
-  none: null,
-}
-
-type GhCheck = {
-  name?: string | null
-  context?: string | null
-  status?: string | null
-  conclusion?: string | null
-  state?: string | null
-  startedAt?: string | null
-}
-
-type GhPullRequest = {
-  number: number
-  url: string
-  state: string
-  isDraft: boolean
-  reviewDecision?: string | null
-  statusCheckRollup?: GhCheck[] | null
-}
-
-type BashOutput = { gitOperation?: { pr?: { number: number; url?: string } } }
+const LIMIT_LABELS: Record<string, string> = { five_hour: '5h', seven_day: 'week' }
 
 const rateLimits = atom({ plugin: 'session-metrics', key: 'rateLimits' } as const, [])
 const contextWindow = atom({ plugin: 'session-metrics', key: 'contextWindow' } as const, null)
 const costUsd = atom({ plugin: 'session-metrics', key: 'costUsd' } as const, null)
-const pullRequest = atom({ plugin: 'session-metrics', key: 'pullRequest' } as const, null, { shape: 'pr-status-2' })
-const sessionPullRequest = atom({ plugin: 'session-metrics', key: 'sessionPullRequest' } as const, null)
-const canCreatePullRequest = atom({ plugin: 'session-metrics', key: 'canCreatePullRequest' } as const, false)
-const isCreatingPullRequest = atom({ plugin: 'session-metrics', key: 'isCreatingPullRequest' } as const, false)
 const cacheReading = atom({ plugin: 'session-metrics', key: 'cacheReading' } as const, null)
 const clockTick = atom({ plugin: 'session-metrics', key: 'clockTick' } as const, 0)
 
-let lastPullRequestCheckAt = -Infinity
 let localOffsetMs = 0
-let pullRequestTurnId: string | null = null
 
-function severityColor(percent: number): Color {
+function severityColor(percent: number): Color | null {
   if (percent >= DANGER_PERCENT) return 'error'
   if (percent >= WARNING_PERCENT) return 'warning'
-  return 'success'
+  return null
 }
 
 function clockTime(local: Date) {
@@ -109,9 +46,7 @@ function resetLabel(resetsAt: string, now: number) {
   const resetMs = Date.parse(resetsAt)
   const local = new Date(resetMs + localOffsetMs)
   const isWithinDay = resetMs - now < DAY_MS
-  return isWithinDay
-    ? clockTime(local)
-    : `${WEEKDAYS[local.getUTCDay()]} ${MONTHS[local.getUTCMonth()]} ${local.getUTCDate()}`
+  return isWithinDay ? clockTime(local) : `${WEEKDAYS[local.getUTCDay()]} ${clockTime(local)}`
 }
 
 function countdown(remainingMs: number) {
@@ -151,44 +86,7 @@ function cacheStatus(reading: CacheReading, now: number) {
   const isExpired = expiresAt !== null && now >= expiresAt
   const state: CacheState | 'expired' = isExpired ? 'expired' : cacheState(reading.hitPercent)
   const expiresIn = expiresAt !== null && !isExpired ? countdown(expiresAt - now) : null
-  return { state, expiresIn, ...CACHE_BADGES[state] }
-}
-
-function latestRunPerCheck(checks: GhCheck[]) {
-  const latest = new Map<string, GhCheck>()
-  for (const check of checks) {
-    const name = check.name ?? check.context ?? ''
-    const seen = latest.get(name)
-    if (!seen || (check.startedAt ?? '') > (seen.startedAt ?? '')) latest.set(name, check)
-  }
-  return [...latest.values()]
-}
-
-function isFailedCheck(check: GhCheck) {
-  return FAILED_CHECK_RESULTS.has(check.conclusion ?? '') || FAILED_CHECK_RESULTS.has(check.state ?? '')
-}
-
-function isPendingCheck(check: GhCheck) {
-  return (check.status != null && check.status !== 'COMPLETED') || PENDING_CHECK_STATES.has(check.state ?? '')
-}
-
-function summarizeChecks(checks: GhCheck[]): ChecksState {
-  const current = latestRunPerCheck(checks)
-  if (current.length === 0) return 'none'
-  if (current.some(isFailedCheck)) return 'failing'
-  if (current.some(isPendingCheck)) return 'pending'
-  return 'passing'
-}
-
-function toPullRequest(raw: GhPullRequest): PullRequest {
-  return {
-    number: raw.number,
-    url: raw.url,
-    state: raw.state,
-    isDraft: raw.isDraft,
-    checks: summarizeChecks(raw.statusCheckRollup ?? []),
-    review: REVIEW_STATES[raw.reviewDecision ?? ''] ?? 'none',
-  }
+  return { state, expiresIn, color: CACHE_COLORS[state] }
 }
 
 async function readLocalOffset($: EngineInterface) {
@@ -197,51 +95,6 @@ async function readLocalOffset($: EngineInterface) {
   if (!match) return
   const [, sign, hours, minutes] = match
   localOffsetMs = (sign === '-' ? -1 : 1) * (Number(hours) * HOUR_MS + Number(minutes) * MINUTE_MS)
-}
-
-function pullRequestNamedIn(command: string): string | null {
-  if (!GH_COMMAND.test(command)) return null
-  const url = PULL_REQUEST_URL.exec(command)
-  if (url) return url[0]
-  const apiPull = GH_API_PULL.exec(command)
-  if (apiPull) return `https://github.com/${apiPull[1]}/pull/${apiPull[2]}`
-  const numbered = GH_PR_NUMBER.exec(command)
-  if (!numbered) return null
-  const repo = GH_REPO_FLAG.exec(command)
-  return repo ? `https://github.com/${repo[1]}/pull/${numbered[1]}` : numbered[1] ?? null
-}
-
-async function viewPullRequest($: EngineInterface, selector: string[]) {
-  const { exitCode, stdout, stderr } = await $.process.run(['gh', 'pr', 'view', ...selector, '--json', PULL_REQUEST_FIELDS])
-  return { found: exitCode === 0 ? toPullRequest(JSON.parse(stdout)) : null, stderr }
-}
-
-async function refreshPullRequest($: EngineInterface, isForced: boolean) {
-  const now = await $.clock.now()
-  if (!isForced && now - lastPullRequestCheckAt < PULL_REQUEST_CHECK_INTERVAL_MS) return
-  lastPullRequestCheckAt = now
-  const onBranch = await viewPullRequest($, [])
-  const named = onBranch.found ? null : await read($, sessionPullRequest)
-  const found = onBranch.found ?? (named ? (await viewPullRequest($, [named])).found : null)
-  await update($, pullRequest, () => found)
-  await update($, canCreatePullRequest, () => !found && onBranch.stderr.includes(NO_PULL_REQUEST_MESSAGE))
-}
-
-async function rememberPullRequest($: EngineInterface, named: string) {
-  if ((await read($, sessionPullRequest)) === named) return
-  await update($, sessionPullRequest, () => named)
-  await refreshPullRequest($, true)
-}
-
-async function askClaudeToCreatePullRequest($: EngineInterface) {
-  await update($, isCreatingPullRequest, () => true)
-  await $.prompt.submit({ text: CREATE_PULL_REQUEST_PROMPT })
-}
-
-async function finishCreatingPullRequest($: EngineInterface) {
-  pullRequestTurnId = null
-  await refreshPullRequest($, true)
-  await update($, isCreatingPullRequest, () => false)
 }
 
 async function seedMeasurements($: EngineInterface) {
@@ -259,31 +112,14 @@ function toContextWindow(context: SessionContextUsage): ContextWindow | null {
 function refreshInBackground($: EngineInterface) {
   void readLocalOffset($).catch(() => undefined)
   void seedMeasurements($).catch(() => undefined)
-  void refreshPullRequest($, false).catch(() => undefined)
 }
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     const started = await next(e)
-    await update($, isCreatingPullRequest, () => false)
     refreshInBackground($)
     $.clock.every(MINUTE_MS, () => void update($, clockTick, tick => tick + 1))
     return started
-  })
-
-  on('turn.start', async ($, e, next) => {
-    if (!e.agentId && e.text === CREATE_PULL_REQUEST_PROMPT) pullRequestTurnId = e.turnId
-    return next(e)
-  })
-
-  on('tool.call', async ($, e, next) => {
-    const ran = await next(e)
-    if (e.tool !== 'Bash') return ran
-    const output = ran.deny === undefined && !ran.isError ? (ran.result as BashOutput) : undefined
-    const operated = output?.gitOperation?.pr
-    const named = operated ? operated.url ?? `${operated.number}` : pullRequestNamedIn(e.command)
-    if (named && !e.agentId) void rememberPullRequest($, named).catch(() => undefined)
-    return ran
   })
 
   on('turn.step', async function* ($, e, next) {
@@ -302,91 +138,74 @@ export const register: Register = on => {
   })
 
   on('turn.complete', async ($, e, next) => {
-    if (e.turnId === pullRequestTurnId) void finishCreatingPullRequest($).catch(() => undefined)
-    else if (!e.agentId) refreshInBackground($)
+    if (!e.agentId) refreshInBackground($)
     return next(e)
   })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey) return next(e)
 
-    const [cache, , context, limits, cost, pr, canCreate, isCreating, now] = await Promise.all([
+    const [cache, , context, limits, cost, now] = await Promise.all([
       read($, cacheReading),
       read($, clockTick),
       read($, contextWindow),
       read($, rateLimits),
       read($, costUsd),
-      read($, pullRequest),
-      read($, canCreatePullRequest),
-      read($, isCreatingPullRequest),
       $.clock.now(),
     ])
-    const { Box, Button, Text, Link } = $.ui.resolve(e)
+    const { Box, Text } = $.ui.resolve(e)
     const shownLimits = limits.filter(limit => limit.kind in LIMIT_LABELS)
 
-    const percentPiece = (key: string, label: string, percent: number, suffix: string | null) => (
-      <Text key={key} tabular>
-        <Text dimColor>{`${label} `}</Text>
-        <Text bold color={severityColor(percent)}>{`${Math.round(percent)}%`}</Text>
-        {suffix ? <Text dimColor>{` ${suffix}`}</Text> : null}
-      </Text>
-    )
+    const percentPiece = (key: string, label: string, percent: number, suffix: string | null) => {
+      const color = severityColor(percent)
+      return (
+        <Text key={key} tabular>
+          <Text dimColor>{`${label} `}</Text>
+          {color ? <Text color={color}>{`${Math.round(percent)}%`}</Text> : <Text>{`${Math.round(percent)}%`}</Text>}
+          {suffix ? <Text dimColor>{` · ${suffix}`}</Text> : null}
+        </Text>
+      )
+    }
 
     const cachePiece = (reading: CacheReading) => {
       const status = cacheStatus(reading, now)
       return (
         <Text key="cache">
-          <Text>{`${status.icon} `}</Text>
-          <Text bold color={status.color}>{status.state}</Text>
+          <Text dimColor>cache </Text>
+          {status.color ? <Text color={status.color}>{status.state}</Text> : <Text>{status.state}</Text>}
           {status.expiresIn ? <Text dimColor>{` ${status.expiresIn}`}</Text> : null}
         </Text>
       )
     }
 
-    const badge = (key: string, found: { text: string; color: Color } | null) =>
-      found ? <Text key={key} color={found.color}>{`  ${found.text}`}</Text> : null
-
-    const pullRequestPiece = () => {
-      if (pr) {
-        const stateColor = pr.isDraft ? 'subtle' : PULL_REQUEST_COLORS[pr.state] ?? 'text'
-        const stateText = pr.isDraft && pr.state === 'OPEN' ? 'draft' : pr.state.toLowerCase()
-        return (
-          <Box key="pr" flexDirection="row">
-            <Text>🔀 </Text>
-            <Link href={pr.url} label={`PR #${pr.number}`} />
-            <Text color={stateColor}>{` ${stateText}`}</Text>
-            {badge('checks', CHECKS_BADGES[pr.checks])}
-            {badge('review', REVIEW_BADGES[pr.review])}
-          </Box>
-        )
-      }
-      if (isCreating) return <Text key="pr" color="warning">⏳ Creating draft PR…</Text>
-      if (canCreate) {
-        return (
-          <Button key="create-pr" label="Create draft PR" variant="primary" onPress={() => askClaudeToCreatePullRequest($)} />
-        )
-      }
-      return <Text key="pr" color="subtle">🔀 no PR</Text>
-    }
-
     const pieces = [
-      context ? percentPiece('context', '🧠 ctx', context.percent, null) : null,
+      context ? percentPiece('context', 'ctx', context.percent, null) : null,
       cache ? cachePiece(cache) : null,
       ...shownLimits.map(limit =>
-        percentPiece(limit.kind, LIMIT_LABELS[limit.kind] ?? limit.kind, limit.percentUsed, limit.resetsAt ? `↻ ${resetLabel(limit.resetsAt, now)}` : null),
+        percentPiece(limit.kind, LIMIT_LABELS[limit.kind] ?? limit.kind, limit.percentUsed, limit.resetsAt ? resetLabel(limit.resetsAt, now) : null),
       ),
-      <Text key="cost">
-        <Text>💰 </Text>
-        <Text bold color="claude">{`$${(cost ?? 0).toFixed(2)}`}</Text>
+      <Text key="cost" tabular>
+        <Text dimColor>cost </Text>
+        <Text>{`$${(cost ?? 0).toFixed(2)}`}</Text>
       </Text>,
-      pullRequestPiece(),
     ].filter(piece => piece !== null)
 
+    const isDesktop = e.surface === 'desktop'
+    const divider = (index: number) => (
+      <Text key={`divider-${index}`} color={isDesktop ? DESKTOP_DIVIDER : 'subtle'}>
+        {DIVIDER}
+      </Text>
+    )
+
     return (
-      <Box flexDirection="row" flexWrap="wrap" alignItems="center">
-        {pieces.flatMap((piece, index) =>
-          index === 0 ? [piece] : [<Text key={`separator-${index}`} color="subtle">{'  ·  '}</Text>, piece],
-        )}
+      <Box
+        flexDirection="row"
+        flexWrap="wrap"
+        alignItems="center"
+        paddingX={1}
+        marginBottom="xs"
+      >
+        {pieces.flatMap((piece, index) => (index === 0 ? [piece] : [divider(index), piece]))}
       </Box>
     )
   })

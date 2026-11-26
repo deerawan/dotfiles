@@ -1,1 +1,1 @@
-{ "name": "session-metrics", "version": "0.1.1", "description": "Band above the prompt: session tokens, weekly tokens, estimated cost, and the branch's PR link", "types": "./types/index.d.ts" }
+{ "name": "session-metrics", "version": "0.2.0", "author": { "name": "Budi Irawan" }, "description": "Band above the prompt: context, prompt cache, 5-hour and weekly limits, and estimated cost", "types": "./types/index.d.ts" }

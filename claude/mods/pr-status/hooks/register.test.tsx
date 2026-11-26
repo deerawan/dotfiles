@@ -2,7 +2,7 @@ import { expect, test } from 'claude-code/testing'
 import type { TestBody } from 'claude-code/testing'
 
 const BAND = {
-  plugin: 'session-metrics',
+  plugin: 'pr-status',
   component: 'AbovePrompt',
   props: {
     hasSurvey: false,
@@ -32,6 +32,7 @@ const REVIEWED_PULL_REQUEST = JSON.stringify({
   isDraft: false,
   reviewDecision: 'REVIEW_REQUIRED',
   statusCheckRollup: [],
+  reviews: [],
 })
 
 function ran(exitCode: number, stdout: string, stderr: string) {
@@ -58,20 +59,19 @@ for (const [label, command] of [
 
     for (const surface of ['terminal', 'desktop'] as const) {
       const ui = await $.ui.mount({ ...BAND, surface })
-      expect(await ui.find({ type: 'Button' })).toBeUndefined()
-      expect(await ui.find({ type: 'Text', text: /needs review/ })).toBeDefined()
+      expect(await ui.find({ type: 'Text', text: /review needed/ })).toBeDefined()
       await ui.unmount()
     }
   })
 }
 
-test('the band offers a draft PR when neither the branch nor the session has one', async ($, on) => {
+test('the band draws no PR row when neither the branch nor the session has one', async ($, on) => {
   stubEngine(on)
 
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
   await $.tool.call({ tool: 'Bash', command: 'gh pr list' })
 
   const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
-  expect(await ui.find({ type: 'Button' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /review needed/ })).toBeUndefined()
   await ui.unmount()
 })
