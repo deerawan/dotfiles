@@ -108,22 +108,31 @@ Rank each group by score. Show at most five, so the user can judge each one. A p
 with a skip verdict goes under "Dropped" with its score and reason code, so the user can
 still pick it by name.
 
-```text
-Retro: <digest ticket, or "no ticket"> · mode <single|deep> (<reasons>) · <N> events
+Write the output as normal Markdown, not inside a code block, so it wraps in any window.
+Put each field on one line, and don't break long lines yourself. Use this template:
 
-[1] <target type> · <target path>
-    Problem: <one line, quoting the moment> [E#] L#
-    Change:  <one line: what gets added, removed, or enforced>
-    Loophole: <how it could pass without fixing the problem, and how the change closes that, or "none">
-    Covered already? <no, grep found nothing | yes, <file:line> was broken, so enforce it>
-    Score <n>/8: <include | your call>
-      recurrence <0-2>: <reason> [E#] · cost <0-2>: <reason> [E#]
-      enforceability <0-2>: <target type> · verifiable <0-2>: <reason>
+```markdown
+**Retro: <digest ticket, or "no ticket"> · mode <single|deep> (<reasons>) · <N> events**
 
-[2] ...
+### 1. <target type> · `<target path>`
 
-Dropped: <one line each: candidate, reason code, and "skip <n>/8" when it was scored>
-Noticed, out of scope: <one line each, or "none">
+- **Problem:** <one line, quoting the moment> [E#] L#
+- **Change:** <one line: what gets added, removed, or enforced>
+- **Loophole:** <how it could pass without fixing the problem, and how the change closes that, or "none">
+- **Covered already?** <no, grep found nothing | yes, `<file:line>` was broken, so enforce it>
+- **Score <n>/8:** <include | your call>
+  - recurrence <0-2>: <reason> [E#]
+  - cost <0-2>: <reason> [E#]
+  - enforceability <0-2>: <target type>
+  - verifiable <0-2>: <reason>
+
+### 2. ...
+
+### Dropped
+
+- <candidate>: <reason code>, and "skip <n>/8" when it was scored
+
+**Noticed, out of scope:** <one line each, or "none">
 
 Reply with the numbers to ship (for example "1 3"), "none", or edits.
 ```
