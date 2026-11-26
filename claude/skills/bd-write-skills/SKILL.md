@@ -72,11 +72,14 @@ pick deliberately. Then:
 
 ## Step 4: Measure — scaled to type (GREEN)
 
-Locate the installed skill-creator once, then drive its tooling — don't reinvent it:
+Use `anthropic-skills:skill-creator`, the account-synced copy; other installed copies are stale. Locate it once, then drive its tooling — don't reinvent it:
 
 ```bash
-SC=$(dirname "$(find ~/.claude/plugins -path '*skill-creator/SKILL.md' | head -1)")
+SC=$(dirname "$(ls -d ~/.claude/skills/synced/*/skill-creator/SKILL.md | head -1)")
+grep -q 'claude plugin eval' "$SC/references/schemas.md" || echo "stale skill-creator at $SC"
 ```
+
+Stop if the check prints `stale`. Write eval cases as case folders under `evals/`, in the layout `$SC/references/schemas.md` defines, never `evals.json`. Run them with `claude plugin eval <skill-dir> -j 4` at the default threshold, and follow `rule-skill-evals-all-pass`.
 
 - **Discipline** → rerun the Step-2 pressure scenarios **with** the skill; combine
   pressures (time + sunk cost + authority). Success = complies under maximum pressure.
@@ -113,7 +116,7 @@ so the next edit re-baselines against them.
 ## Delegate (no `@`-links)
 
 - `superpowers:writing-skills` — full TDD-for-skills method, bulletproofing, SDO depth.
-- `skill-creator` — eval harness, benchmark, viewer, `quick_validate.py`, and the
+- `anthropic-skills:skill-creator` — eval case layout, harness, benchmark, viewer, `quick_validate.py`, and the
   description-triggering optimizer (`scripts/run_loop.py`) when a skill under- or
   over-triggers.
 
