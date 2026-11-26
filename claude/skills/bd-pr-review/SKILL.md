@@ -74,7 +74,9 @@ The desktop app jumps to a line only when `:line` is inside the link target, so
 the line goes in both the text and the target. The permalink uses the full
 `headRefOid` and keeps at least one context line each side. Under the draft, add a
 `Cited in the body:` line with each file the body cites as a `[file:line](path:line)`
-link. The header and the cited line are terminal-only. The comment body keeps
+link. Write the header and the cited line as plain markdown lines, never inside a
+code fence: a fence shows the links as raw `[text](url)` text. The header and the
+cited line are terminal-only. The comment body keeps
 plain code spans, because GitHub does not link paths. If Step 1 did not check out
 the PR head, drop the local links, show the permalinks only, and say why.
 

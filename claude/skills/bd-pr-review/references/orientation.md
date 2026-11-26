@@ -12,8 +12,11 @@ Return under 350 words, in this order:
    of it, marked as a guess.
 2. **How it works today → what changes.** Two to four numbered steps for one
    flow. When the change spans several places, draw a sketch instead: a call
-   tree, a file tree, or a step-by-place grid, shaped as a diff when that shows
-   the move best.
+   tree, a file tree, or a step-by-place grid. When the sketch shows a before
+   and an after, put it in a ```` ```diff ```` fence with `-` and `+` lines so
+   the terminal colors them. Keep every sketch line under 72 characters, since a
+   fence wraps long lines and breaks the tree. Shorten argument lists to `{…}`
+   and move the details into the steps below the sketch.
 3. **Behavior changes.** A `Case | Before | After` table with one row per change
    a user, caller, or job would notice. Rows vary one thing. Mark any row the
    PR description doesn't mention. For a pure refactor, write "No behavior
