@@ -57,6 +57,7 @@ Rules from the [Google developer documentation style guide](https://developers.g
 - Don't describe future plans or announce features that do not exist yet. Remove "currently", "new", and "now" when the text must stay true next year.
 - Use the short word: "use", not "utilize". "Before", not "prior to". "Start", not "commence".
 - Call each thing by the name the code, the UI, or the CLI gives it. Don't invent a metaphor for it.
+- Say what kind of thing a name is: "the `orders` table", "the `created_at` column", "the `send-invoice` function", "the `PriceCalculator` class". A bare identifier leaves the reader guessing whether it is a table, an endpoint, a function, or a file. When the doc uses a shorthand such as "the job", define it once: "the job is the `nightly-export` function".
 - Follow a decision or a rule with its reason in the next sentence. A design doc reader asks "why?" right after "what".
 - Make every cross-reference work on its own. Name the target and link it: "Sub-task 4 (Ops deletes an item)", not a bare "Sub-task 4" or "see D3".
 
